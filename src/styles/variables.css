@@ -1,0 +1,117 @@
+/* 42VoiceBridge Senior-Friendly Healthcare Design System Tokens */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+:root {
+  /* Color Palette - High Contrast & Warm Calming Healthcare Tones */
+  --color-bg-base: #f4f7fb;
+  --color-bg-surface: #ffffff;
+  --color-bg-subtle: #edf2f8;
+  --color-bg-card-hover: #f8faff;
+  
+  --color-primary: #194bfb;           /* Deep readable vibrant royal blue */
+  --color-primary-dark: #0f2fc2;      /* Higher contrast hover */
+  --color-primary-light: #e8eeff;     /* Soft highlight background */
+  --color-primary-border: #9cb5ff;
+  
+  --color-secondary: #00876c;         /* Calming medical emerald green */
+  --color-secondary-light: #e5f6f1;
+  --color-secondary-border: #7ee0c5;
+  
+  --color-accent: #d9480f;            /* High visibility warm coral orange for alerts/weak points */
+  --color-accent-light: #fff2eb;
+  --color-accent-border: #ffb899;
+  
+  --color-text-title: #0f172a;        /* High contrast deep slate (WCAG AAA) */
+  --color-text-body: #1e293b;         /* Crisp readability for elderly eyes */
+  --color-text-muted: #475569;        /* Clearly readable secondary text */
+  --color-text-inverse: #ffffff;
+  
+  --color-border: #cbd5e1;            /* Thicker, more distinct border for easy edge recognition */
+  --color-border-focused: #194bfb;
+  
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+
+  /* Senior Readability Font Sizing Scales */
+  --font-family-base: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  
+  /* Normal mode (already senior friendly: minimum 17px) */
+  --text-xs: 0.95rem;   /* ~15px */
+  --text-sm: 1.05rem;   /* ~17px */
+  --text-base: 1.15rem; /* ~18.5px */
+  --text-lg: 1.3rem;    /* ~21px */
+  --text-xl: 1.5rem;    /* ~24px */
+  --text-2xl: 1.85rem;  /* ~30px */
+  --text-3xl: 2.3rem;   /* ~37px */
+  --text-4xl: 2.8rem;   /* ~45px */
+  
+  /* Line Heights for elderly readability (relaxed) */
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+  --leading-loose: 1.9;
+
+  /* Touch & Click Target Standards (Senior-Accessible) */
+  --min-touch-size: 56px;
+  --min-button-height: 56px;
+  --border-radius-sm: 12px;
+  --border-radius-md: 18px;
+  --border-radius-lg: 24px;
+  --border-radius-full: 9999px;
+
+  /* Shadows with clear depth differentiation */
+  --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 25px rgba(25, 75, 251, 0.1), 0 4px 10px rgba(15, 23, 42, 0.05);
+  --shadow-glow: 0 0 0 4px rgba(25, 75, 251, 0.25);
+  --shadow-glow-record: 0 0 0 6px rgba(220, 38, 38, 0.28);
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Senior Font Size Overrides */
+[data-font-size="large"] {
+  --text-xs: 1.05rem;
+  --text-sm: 1.18rem;
+  --text-base: 1.3rem;
+  --text-lg: 1.5rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.1rem;
+  --text-3xl: 2.6rem;
+  --text-4xl: 3.2rem;
+  --min-button-height: 62px;
+}
+
+[data-font-size="xlarge"] {
+  --text-xs: 1.15rem;
+  --text-sm: 1.3rem;
+  --text-base: 1.45rem;
+  --text-lg: 1.7rem;
+  --text-xl: 2rem;
+  --text-2xl: 2.4rem;
+  --text-3xl: 3.1rem;
+  --text-4xl: 3.8rem;
+  --min-button-height: 68px;
+}
+
+/* High Contrast Mode for vision-impaired seniors */
+[data-high-contrast="true"] {
+  --color-bg-base: #0a0f1d;
+  --color-bg-surface: #141c2e;
+  --color-bg-subtle: #1c2740;
+  --color-bg-card-hover: #22304f;
+  --color-text-title: #ffffff;
+  --color-text-body: #f1f5f9;
+  --color-text-muted: #cbd5e1;
+  --color-border: #475569;
+  --color-primary: #5c87ff;
+  --color-primary-dark: #82a3ff;
+  --color-primary-light: #18264e;
+  --color-primary-border: #5c87ff;
+  --color-secondary: #2dd4bf;
+  --color-secondary-light: #133a35;
+  --color-accent: #fb923c;
+  --color-accent-light: #422006;
+}
