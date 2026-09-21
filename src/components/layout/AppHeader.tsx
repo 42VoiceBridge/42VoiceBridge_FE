@@ -69,7 +69,7 @@ export const AppHeader: React.FC = () => {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-primary)' }}>
-                42VoiceBridge
+                VoiceBridge
               </span>
               <span
                 style={{

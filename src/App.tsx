@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
         >
           <div>
             <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--color-primary)' }}>
-              42VoiceBridge (AI 구음장애 보조 서비스)
+              VoiceBridge (AI 구음장애 보조 서비스)
             </span>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
               안정적인 의사소통과 선명한 발음을 위한 인공지능 음성 케어 솔루션
