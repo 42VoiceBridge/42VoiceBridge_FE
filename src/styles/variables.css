@@ -3,30 +3,34 @@
 
 :root {
   /* Color Palette - High Contrast & Warm Calming Healthcare Tones */
-  --color-bg-base: #f4f7fb;
-  --color-bg-surface: #ffffff;
-  --color-bg-subtle: #edf2f8;
-  --color-bg-card-hover: #f8faff;
+  --color-bg-base: #F7F5F0; /* Warm Ivory background */
+  --color-bg-surface: #FFFFFF; /* Card/section background */
+  --color-bg-subtle: #E7E3DC; /* Light subtle bg (Warm Gray) */
+  --color-bg-card-hover: #EDECE9; /* Slight hover bg */
   
-  --color-primary: #194bfb;           /* Deep readable vibrant royal blue */
-  --color-primary-dark: #0f2fc2;      /* Higher contrast hover */
-  --color-primary-light: #e8eeff;     /* Soft highlight background */
-  --color-primary-border: #9cb5ff;
+  --color-primary: #7FA893;           /* Sage Green – main actions, active/selected */
+  --color-primary-dark: #5B8A73;      /* Darker Sage for hover/active */
+  --color-primary-light: #DCE9E1;     /* Light Sage background */
+  --color-primary-cta: var(--color-primary); /* Sage Green CTA */
+  --color-primary-border: #A1C7A5;   /* Sage border */
+  --color-lavender: #A99BC8;           /* Muted Lavender */
   
   --color-secondary: #00876c;         /* Calming medical emerald green */
   --color-secondary-light: #e5f6f1;
   --color-secondary-border: #7ee0c5;
   
-  --color-accent: #d9480f;            /* High visibility warm coral orange for alerts/weak points */
-  --color-accent-light: #fff2eb;
-  --color-accent-border: #ffb899;
+  --color-accent: #DFA18A;            /* Warm Coral – warnings, alerts, improvement needed */
+  --color-accent-light: #F2D9D0;
+  --color-accent-border: #F5C2B2;
   
-  --color-text-title: #0f172a;        /* High contrast deep slate (WCAG AAA) */
-  --color-text-body: #1e293b;         /* Crisp readability for elderly eyes */
-  --color-text-muted: #475569;        /* Clearly readable secondary text */
+  --color-text-primary: #30302E;        /* Dark Charcoal – primary text */
+  --color-text-secondary: #6B6965;      /* Warm Gray – secondary text */
+  --color-text-title: var(--color-text-primary); /* Alias for title */
+  --color-text-body: var(--color-text-primary);  /* Alias for body */
+  --color-text-muted: var(--color-text-secondary); /* Muted uses warm gray */
   --color-text-inverse: #ffffff;
   
-  --color-border: #cbd5e1;            /* Thicker, more distinct border for easy edge recognition */
+  --color-border: #E0DDD6;            /* Warm Gray border */
   --color-border-focused: #194bfb;
   
   --color-success: #059669;

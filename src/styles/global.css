@@ -1,13 +1,16 @@
 /* Global Senior-Friendly Base Styles */
 @import './variables.css';
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html, body {
+html,
+body {
   font-family: var(--font-family-base);
   background-color: var(--color-bg-base);
   color: var(--color-text-body);
@@ -41,7 +44,8 @@ button {
   touch-action: manipulation;
 }
 
-input, textarea {
+input,
+textarea {
   font-family: inherit;
   font-size: var(--text-base);
   color: var(--color-text-title);
@@ -54,24 +58,41 @@ input, textarea {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   border-color: var(--color-primary);
   box-shadow: var(--shadow-glow);
   outline: none;
 }
 
 /* Common Typography Classes */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   color: var(--color-text-title);
   font-weight: 700;
   line-height: var(--leading-normal);
   letter-spacing: -0.02em;
 }
 
-h1 { font-size: var(--text-3xl); }
-h2 { font-size: var(--text-2xl); }
-h3 { font-size: var(--text-xl); }
-p { font-size: var(--text-base); }
+h1 {
+  font-size: var(--text-3xl);
+}
+
+h2 {
+  font-size: var(--text-2xl);
+}
+
+h3 {
+  font-size: var(--text-xl);
+}
+
+p {
+  font-size: var(--text-base);
+}
 
 /* Animation Keyframes */
 @keyframes pulseGlow {
@@ -79,10 +100,12 @@ p { font-size: var(--text-base); }
     transform: scale(0.98);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
   }
+
   70% {
     transform: scale(1.03);
     box-shadow: 0 0 0 16px rgba(220, 38, 38, 0);
   }
+
   100% {
     transform: scale(0.98);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
@@ -90,13 +113,25 @@ p { font-size: var(--text-base); }
 }
 
 @keyframes floatGentle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 @keyframes spinSlow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-pulse-record {
@@ -145,6 +180,7 @@ p { font-size: var(--text-base); }
   transform: translateY(-4px);
   box-shadow: var(--shadow-lg);
   border-color: var(--color-primary-border) !important;
+  background-color: var(--color-bg-subtle);
 }
 
 /* Senior-Friendly Distinct Scrollbar */
@@ -166,4 +202,3 @@ p { font-size: var(--text-base); }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary);
 }
-

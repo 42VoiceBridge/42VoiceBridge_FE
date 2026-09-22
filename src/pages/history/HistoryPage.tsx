@@ -53,7 +53,7 @@ export const HistoryPage: React.FC = () => {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: 'var(--text-2xl)' }}>{user?.name || '김채영'}님의 발음 기록실</h1>
+              <h1 style={{ fontSize: 'var(--text-2xl)' }}>{user?.name || '홍길동'}님의 발음 기록실</h1>
             </div>
             <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
               가입일: {user?.createdAt || '2026.08.01'} | 총 {historyResults.length}회 진단 완료

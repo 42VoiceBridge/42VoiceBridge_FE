@@ -54,7 +54,7 @@ export const DashboardPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
             <span style={{ fontSize: '1.8rem' }}>👋</span>
             <h1 style={{ fontSize: 'var(--text-3xl)', color: 'var(--color-text-title)' }}>
-              안녕하세요, <span style={{ color: 'var(--color-primary)' }}>{user?.name || '김채영'}</span>님!
+              안녕하세요, <span style={{ color: 'var(--color-primary)' }}>{user?.name || '홍길동'}</span>님!
             </h1>
           </div>
           <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>

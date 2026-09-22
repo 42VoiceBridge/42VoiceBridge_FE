@@ -86,7 +86,7 @@ export const AppHeader: React.FC = () => {
               </span>
             </div>
             <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-              시니어 & 구음장애 음성 의사소통 플랫폼
+              AI 구음장애 보조 서비스
             </p>
           </div>
         </div>

@@ -12,11 +12,11 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    login(email, '김채영');
+    login(email, '홍길동');
   };
 
   const handleDemoLogin = () => {
-    login('chaeyeong@example.com', '김채영');
+    login('chaeyeong@example.com', '홍길동');
   };
 
   return (
@@ -73,7 +73,7 @@ export const LoginPage: React.FC = () => {
           icon={<Sparkles size={20} />}
           onClick={handleDemoLogin}
         >
-          김채영님(체험 계정)으로 바로 시작
+          홍길동님(체험 계정)으로 바로 시작
         </SeniorButton>
       </div>
 

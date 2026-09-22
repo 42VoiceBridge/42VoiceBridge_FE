@@ -9,7 +9,7 @@ import type {
 
 export const currentUser: User = {
   id: 'user-01',
-  name: '김채영',
+  name: '홍길동',
   email: 'chaeyeong@example.com',
   createdAt: '2026-08-01',
 };

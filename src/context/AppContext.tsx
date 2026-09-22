@@ -33,7 +33,7 @@ interface AppContextType {
   login: (email: string, name?: string) => void;
   logout: () => void;
   register: (name: string, email: string) => void;
-  
+
   // Senior Accessibility Settings
   fontSize: FontSizeLevel;
   setFontSize: (level: FontSizeLevel) => void;
@@ -79,7 +79,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     document.documentElement.setAttribute('data-high-contrast', String(highContrast));
   }, [fontSize, highContrast]);
 
-  const login = (email: string, name = '김채영') => {
+  const login = (email: string, name = '홍길동') => {
     setUser({
       id: 'user-01',
       name,

@@ -58,7 +58,7 @@ export const PersonalizationPage: React.FC = () => {
           <div>
             <h1 style={{ fontSize: 'var(--text-3xl)' }}>AI 개인화 모델 학습</h1>
             <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-              {user?.name || '김채영'}님의 고유한 발성 패턴을 학습하여 인식 정확도를 비약적으로 높입니다.
+              {user?.name || '홍길동'}님의 고유한 발성 패턴을 학습하여 인식 정확도를 비약적으로 높입니다.
             </p>
           </div>
         </div>
@@ -208,7 +208,7 @@ export const PersonalizationPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                 <Award size={20} color="var(--color-secondary)" />
                 <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--color-text-title)' }}>
-                  {user?.name || '김채영'}님 전용 V2.4 모델
+                  {user?.name || '홍길동'}님 전용 V2.4 모델
                 </span>
               </div>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
@@ -293,7 +293,7 @@ export const PersonalizationPage: React.FC = () => {
             }}
           >
             <span style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: 'var(--color-secondary)' }}>
-              🌟 {user?.name || '김채영'}님 전용 맞춤 모델
+              🌟 {user?.name || '홍길동'}님 전용 맞춤 모델
             </span>
             <div style={{ fontSize: 'var(--text-4xl)', fontWeight: 900, color: 'var(--color-secondary)', margin: '12px 0' }}>
               {personalization.personalizedAccuracy}%
