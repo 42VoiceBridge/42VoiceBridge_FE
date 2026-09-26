@@ -9,6 +9,7 @@ import { PracticePage } from './pages/practice/PracticePage';
 import { PersonalizationPage } from './pages/personalization/PersonalizationPage';
 import { VoiceAssistPage } from './pages/assist/VoiceAssistPage';
 import { HistoryPage } from './pages/history/HistoryPage';
+import { SettingsPage } from './pages/settings/SettingsPage';
 
 const AppContent: React.FC = () => {
   const { currentTab, user } = useApp();
@@ -35,6 +36,8 @@ const AppContent: React.FC = () => {
         return <VoiceAssistPage />;
       case 'history':
         return <HistoryPage />;
+      case 'settings':
+        return <SettingsPage />;
       case 'login':
         return <LoginPage />;
       case 'register':

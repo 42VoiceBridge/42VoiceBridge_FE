@@ -1,525 +1,422 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Mic,
-  BookOpen,
-  Cpu,
+  BrainCircuit,
+  Activity,
   MessageSquare,
   ArrowRight,
-  TrendingUp,
-  AlertCircle,
-  Award,
-  ChevronRight,
+  BookOpen,
+  Volume2,
+  Square,
+  Sparkles,
+  Maximize2,
+  Copy,
+  Check,
+  X
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
+import { AudioVisualizer } from '../../components/common/AudioVisualizer';
+import { speakText } from '../../utils/audioUtils';
 
 export const DashboardPage: React.FC = () => {
-  const { user, latestDiagnosis, historyResults, setCurrentTab } = useApp();
+  const { user, personalization, assistMessages, addAssistMessage, setCurrentTab } = useApp();
+  const [isRecording, setIsRecording] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [bigViewText, setBigViewText] = useState<string | null>(null);
+
+  // Simulated live demo examples
+  const demoSamples = [
+    { original: '따..듯..한 물.. 한.. 잔.. 주..세..요', corrected: '따뜻한 물 한 잔만 부탁드립니다.', confidence: 96 },
+    { original: '약..국.. 이.. 어..디..에 있..나..요', corrected: '가까운 약국이 어디에 있나요?', confidence: 94 },
+    { original: '오..느.. 날..씨.. 조..아..요', corrected: '오늘 날씨가 참 좋습니다.', confidence: 97 },
+    { original: '도..와.. 주..셔..서 감..사..합..니..다', corrected: '도와주셔서 정말 감사합니다.', confidence: 98 },
+  ];
+
+  const handleStartAssistRecord = () => {
+    setIsRecording(true);
+  };
+
+  const handleStopAssistRecord = () => {
+    setIsRecording(false);
+    // Pick a realistic sample to simulate personal model inference
+    const sample = demoSamples[Math.floor(Math.random() * demoSamples.length)];
+    addAssistMessage(sample.original, sample.corrected, sample.confidence);
+  };
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleSpeakAloud = (text: string) => {
+    speakText(text, 0.9);
+  };
 
   return (
-    <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '24px 16px 60px' }}>
-      {/* Warm Senior Greeting Header with Hero Illustration */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '32px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '2px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-          marginBottom: '28px',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          alignItems: 'center',
-          gap: '28px',
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              backgroundColor: 'var(--color-primary-light)',
-              color: 'var(--color-primary)',
-              fontWeight: 800,
-              fontSize: 'var(--text-xs)',
-              marginBottom: '12px',
-            }}
-          >
-            <span>🎙️ VoiceBridge 케어 센터</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-            <span style={{ fontSize: '1.8rem' }}>👋</span>
-            <h1 style={{ fontSize: 'var(--text-3xl)', color: 'var(--color-text-title)' }}>
-              안녕하세요, <span style={{ color: 'var(--color-primary)' }}>{user?.name || '홍길동'}</span>님!
-            </h1>
-          </div>
-          <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
-            오늘도 <strong>VoiceBridge</strong>와 함께 편안한 마음으로 또박또박 대화해 볼까요?
-          </p>
-
-          <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
-            <SeniorButton
-              variant="primary"
-              size="large"
-              icon={<Mic size={24} />}
-              onClick={() => setCurrentTab('diagnosis')}
-            >
-              오늘의 발음 진단 시작
-            </SeniorButton>
-            <SeniorButton
-              variant="outline"
-              size="large"
-              icon={<MessageSquare size={22} />}
-              onClick={() => setCurrentTab('assist')}
-            >
-              대화 보조 켜기
-            </SeniorButton>
-          </div>
+    <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '32px 16px 60px' }}>
+      
+      {/* 1. 최우선 기능 — 말해서 전달하기 (핵심 CTA) */}
+      <section style={{ marginBottom: '48px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: 'var(--text-3xl)', color: 'var(--color-text-title)', fontWeight: 800 }}>
+            안녕하세요, <span style={{ color: 'var(--color-primary)' }}>{user?.name}</span>님!
+          </h2>
         </div>
-
-        {/* Hero Visual Asset */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <img
-            src="/voicebridge_hero.jpg"
-            alt="VoiceBridge AI Speech Therapy & Voice Care"
-            style={{
-              width: '100%',
-              maxWidth: '440px',
-              height: 'auto',
-              borderRadius: 'var(--border-radius-md)',
-              border: '2px solid var(--color-border)',
-              boxShadow: 'var(--shadow-md)',
-              objectFit: 'cover',
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Today's Status Banner (Score & Weak Phonemes) */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '20px',
-          marginBottom: '32px',
-        }}
-      >
-        {/* Left Card: Score & Metrics */}
+        
         <div
           style={{
             backgroundColor: 'var(--color-bg-surface)',
-            padding: '28px',
+            padding: '48px 32px',
             borderRadius: 'var(--border-radius-lg)',
-            border: '2px solid var(--color-border)',
-            boxShadow: 'var(--shadow-sm)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '24px',
-            flexWrap: 'wrap',
-          }}
-        >
-          {/* Circular Score Gauge */}
-          <div
-            style={{
-              width: '120px',
-              height: '120px',
-              borderRadius: '50%',
-              background: 'conic-gradient(var(--color-primary) 0% 82%, var(--color-bg-subtle) 82% 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: 'var(--shadow-md)',
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                width: '92px',
-                height: '92px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-bg-surface)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <span style={{ fontSize: 'var(--text-2xl)', fontWeight: 900, color: 'var(--color-primary)', lineHeight: 1 }}>
-                {latestDiagnosis.overallScore}
-              </span>
-              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--color-text-muted)' }}>
-                발음 정확도
-              </span>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Award size={22} color="var(--color-primary)" />
-              <h2 style={{ fontSize: 'var(--text-xl)' }}>최근 발음 평가</h2>
-            </div>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '14px' }}>
-              지난 진단보다 <strong>+6점</strong> 향상되었어요!
-            </p>
-
-            {/* Quick Metrics Bars */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', fontWeight: 700, marginBottom: '2px' }}>
-                  <span>발음 정확도</span>
-                  <span>{latestDiagnosis.metrics.accuracy}%</span>
-                </div>
-                <div style={{ height: '8px', backgroundColor: 'var(--color-bg-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${latestDiagnosis.metrics.accuracy}%`, height: '100%', backgroundColor: 'var(--color-primary)' }} />
-                </div>
-              </div>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-xs)', fontWeight: 700, marginBottom: '2px' }}>
-                  <span>소리 명료도</span>
-                  <span>{latestDiagnosis.metrics.clarity}%</span>
-                </div>
-                <div style={{ height: '8px', backgroundColor: 'var(--color-bg-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ width: `${latestDiagnosis.metrics.clarity}%`, height: '100%', backgroundColor: 'var(--color-secondary)' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Card: Focus Phonemes (Weak Phonemes) */}
-        <div
-          style={{
-            backgroundColor: 'var(--color-bg-surface)',
-            padding: '28px',
-            borderRadius: 'var(--border-radius-lg)',
-            border: '2px solid var(--color-border)',
-            boxShadow: 'var(--shadow-sm)',
+            border: '2px solid var(--color-primary)',
+            boxShadow: 'var(--shadow-lg)',
+            textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '24px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Background decorative glow */}
+          <div style={{
+            position: 'absolute',
+            top: '50%', left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '600px', height: '600px',
+            background: 'radial-gradient(circle, var(--color-primary-light) 0%, rgba(255,255,255,0) 70%)',
+            opacity: 0.5,
+            zIndex: 0,
+            pointerEvents: 'none'
+          }}></div>
+
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: '800px', width: '100%' }}>
+            <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: '16px', color: 'var(--color-text-title)' }}>
+              말해서 전달하기
+            </h1>
+            <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-text-muted)', marginBottom: '32px', lineHeight: 1.6 }}>
+              내 말을 AI가 알아듣기 쉽게 <strong>선명한 글자와 음성으로</strong> 변환해 드립니다.
+            </p>
+
+            {/* Microphone Interaction Box within Hero */}
+            <div style={{ 
+              backgroundColor: '#ffffff', 
+              padding: '32px', 
+              borderRadius: 'var(--border-radius-lg)', 
+              boxShadow: 'var(--shadow-md)',
+              border: '1px solid var(--color-border)',
+              marginBottom: '20px'
+            }}>
+              <h2 style={{ fontSize: 'var(--text-xl)', marginBottom: '12px' }}>
+                {isRecording ? '말씀을 듣고 있어요...' : '마이크를 켜고 편안하게 말씀하세요'}
+              </h2>
+              <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '24px' }}>
+                {isRecording
+                  ? '다 말씀하신 후 아래 [말씀 완료] 버튼을 눌러주세요.'
+                  : '예: "따뜻한 물 한 잔만 부탁드립니다."'}
+              </p>
+
+              <div style={{ maxWidth: '480px', margin: '0 auto 28px' }}>
+                <AudioVisualizer isRecording={isRecording} height={76} />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                {!isRecording ? (
+                  <SeniorButton
+                    variant="primary"
+                    size="huge"
+                    icon={<Mic size={36} />}
+                    onClick={handleStartAssistRecord}
+                    className="animate-pulse-record"
+                    style={{ fontSize: 'var(--text-2xl)', padding: '24px 48px', borderRadius: '40px' }}
+                  >
+                    말하기 시작
+                  </SeniorButton>
+                ) : (
+                  <SeniorButton
+                    variant="danger"
+                    size="huge"
+                    icon={<Square size={28} />}
+                    onClick={handleStopAssistRecord}
+                    style={{ fontSize: 'var(--text-2xl)', padding: '24px 48px', borderRadius: '40px' }}
+                  >
+                    말씀 완료 (AI 변환하기)
+                  </SeniorButton>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Conversation Feed - Appears if there are messages */}
+      {assistMessages.length > 0 && (
+        <section style={{ marginBottom: '48px' }}>
+          <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={24} color="var(--color-secondary)" />
+            <span>최근 대화 변환 결과</span>
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {assistMessages.slice(0, 2).map((msg) => (
+              <div
+                key={msg.id}
+                style={{
+                  backgroundColor: 'var(--color-bg-surface)',
+                  padding: '24px 28px',
+                  borderRadius: 'var(--border-radius-lg)',
+                  border: '2px solid var(--color-border)',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                    {msg.timestamp}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 'var(--text-xs)',
+                      fontWeight: 800,
+                      color: 'var(--color-secondary)',
+                      backgroundColor: 'var(--color-secondary-light)',
+                      padding: '2px 10px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--color-secondary-border)',
+                    }}
+                  >
+                    개인 모델 정확도 {msg.confidence}%
+                  </span>
+                </div>
+
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-primary)', fontWeight: 800, marginBottom: '4px' }}>
+                    AI 변환 문장:
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 'var(--text-2xl)',
+                      fontWeight: 900,
+                      color: 'var(--color-text-title)',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    "{msg.correctedText}"
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
+                  <SeniorButton
+                    variant="secondary"
+                    size="normal"
+                    icon={<Volume2 size={20} />}
+                    onClick={() => handleSpeakAloud(msg.correctedText)}
+                  >
+                    또렷하게 들려주기
+                  </SeniorButton>
+
+                  <SeniorButton
+                    variant="outline"
+                    size="normal"
+                    icon={<Maximize2 size={20} />}
+                    onClick={() => setBigViewText(msg.correctedText)}
+                  >
+                    화면 가득 보여주기
+                  </SeniorButton>
+
+                  <SeniorButton
+                    variant="ghost"
+                    size="normal"
+                    icon={copiedId === msg.id ? <Check size={20} color="var(--color-secondary)" /> : <Copy size={20} />}
+                    onClick={() => handleCopy(msg.id, msg.correctedText)}
+                  >
+                    {copiedId === msg.id ? '복사됨!' : '글자 복사'}
+                  </SeniorButton>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 2. 두 번째 핵심 기능 — AI 개인화 학습 */}
+      <section style={{ marginBottom: '48px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <BrainCircuit size={28} color="var(--color-secondary)" />
+          <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--color-text-title)' }}>
+            나의 AI 학습
+          </h2>
+        </div>
+        
+        <div
+          onClick={() => setCurrentTab('personalization')}
+          className="card-interactive"
+          style={{
+            backgroundColor: 'var(--color-bg-surface)',
+            padding: '32px',
+            borderRadius: 'var(--border-radius-lg)',
+            border: '2px solid var(--color-secondary-border)',
+            boxShadow: 'var(--shadow-sm)',
+            cursor: 'pointer',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '32px',
+            alignItems: 'center'
           }}
         >
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertCircle size={22} color="var(--color-accent)" />
-                <h2 style={{ fontSize: 'var(--text-xl)' }}>집중 연습 음소</h2>
-              </div>
-              <span
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 700,
-                  backgroundColor: 'var(--color-accent-light)',
-                  color: 'var(--color-accent)',
-                  padding: '4px 10px',
-                  borderRadius: '12px',
-                  border: '1px solid var(--color-accent-border)',
-                }}
-              >
-                주의 필요
+            <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, marginBottom: '12px' }}>
+              AI가 내 목소리에 맞춰 똑똑해지고 있어요!
+            </h3>
+            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: '20px' }}>
+              내 목소리를 자주 들려줄수록, AI가 나의 발음을 더 정확하게 이해합니다.<br/>
+              현재 맞춤형 인식률: <strong>{personalization.personalizedAccuracy}%</strong>
+            </p>
+            <SeniorButton variant="secondary" size="normal" icon={<ArrowRight size={20} />}>
+              음성 데이터 등록하러 가기
+            </SeniorButton>
+          </div>
+          
+          <div style={{ backgroundColor: 'var(--color-bg-subtle)', padding: '24px', borderRadius: 'var(--border-radius-md)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700 }}>음성 데이터 수집 진행률</span>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: 'var(--color-secondary)' }}>
+                {personalization.collectedCount} / {personalization.targetCount}
               </span>
             </div>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
-              AI 분석 결과, 아래 발음을 집중적으로 연습하면 훨씬 선명해집니다.
-            </p>
-
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
-              {latestDiagnosis.weakPhonemes.map((wp) => (
-                <div
-                  key={wp.phoneme}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 18px',
-                    backgroundColor: 'var(--color-accent-light)',
-                    border: '2px solid var(--color-accent-border)',
-                    borderRadius: 'var(--border-radius-md)',
-                  }}
-                >
-                  <span style={{ fontSize: 'var(--text-2xl)', fontWeight: 900, color: 'var(--color-accent)' }}>
-                    {wp.phoneme}
-                  </span>
-                  <div>
-                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--color-text-title)' }}>
-                      정확도 {wp.accuracy}%
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--color-accent)', fontWeight: 600 }}>
-                      {wp.errorType} 현상
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div style={{ height: '12px', backgroundColor: 'var(--color-border)', borderRadius: '6px', overflow: 'hidden' }}>
+              <div style={{ 
+                width: `${(personalization.collectedCount / personalization.targetCount) * 100}%`, 
+                height: '100%', 
+                backgroundColor: 'var(--color-secondary)',
+                transition: 'width 0.5s ease-in-out'
+              }} />
             </div>
           </div>
-
-          <SeniorButton
-            variant="outline"
-            size="normal"
-            icon={<ArrowRight size={20} />}
-            onClick={() => setCurrentTab('practice')}
-            style={{ alignSelf: 'flex-start' }}
-          >
-            맞춤 문장 연습하러 가기
-          </SeniorButton>
         </div>
-      </div>
+      </section>
 
-      {/* 4 Key Core Feature Cards */}
-      <div style={{ marginBottom: '36px' }}>
-        <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span>주요 기능 바로가기</span>
+      {/* 3. 부가 기능 (발음 관리, 기록) */}
+      <section>
+        <h2 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-text-title)', marginBottom: '16px' }}>
+          추가 기능
         </h2>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '20px',
-          }}
-        >
-          {/* Card 1: Diagnosis */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          
           <div
             onClick={() => setCurrentTab('diagnosis')}
             className="card-interactive"
             style={{
               backgroundColor: 'var(--color-bg-surface)',
               padding: '24px',
-              borderRadius: 'var(--border-radius-lg)',
-              border: '2px solid var(--color-primary-border)',
-              boxShadow: 'var(--shadow-sm)',
+              borderRadius: 'var(--border-radius-md)',
+              border: '1px solid var(--color-border)',
               cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '16px',
-                  backgroundColor: 'var(--color-primary-light)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px',
-                }}
-              >
-                <Mic size={30} />
-              </div>
-              <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px' }}>발음 진단</h3>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.6', marginBottom: '20px' }}>
-                5개의 문장을 천천히 소리 내어 읽고 현재 발음 상태를 검사합니다.
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: 'var(--color-primary)', fontSize: 'var(--text-base)' }}>
-              <span>지금 시작하기</span>
-              <ChevronRight size={20} />
-            </div>
-          </div>
-
-          {/* Card 2: Practice */}
-          <div
-            onClick={() => setCurrentTab('practice')}
-            className="card-interactive"
-            style={{
-              backgroundColor: 'var(--color-bg-surface)',
-              padding: '24px',
-              borderRadius: 'var(--border-radius-lg)',
-              border: '2px solid var(--color-secondary-border)',
-              boxShadow: 'var(--shadow-sm)',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '16px',
-                  backgroundColor: 'var(--color-secondary-light)',
-                  color: 'var(--color-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px',
-                }}
-              >
-                <BookOpen size={30} />
-              </div>
-              <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px' }}>추천 문장</h3>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.6', marginBottom: '20px' }}>
-                나의 취약 발음(ㄹ, ㅅ)에 맞춘 추천 문장을 하나씩 반복 연습합니다.
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: 'var(--color-secondary)', fontSize: 'var(--text-base)' }}>
-              <span>연습하기</span>
-              <ChevronRight size={20} />
-            </div>
-          </div>
-
-          {/* Card 3: Personalization */}
-          <div
-            onClick={() => setCurrentTab('personalization')}
-            className="card-interactive"
-            style={{
-              backgroundColor: 'var(--color-bg-surface)',
-              padding: '24px',
-              borderRadius: 'var(--border-radius-lg)',
-              border: '2px solid var(--color-border)',
-              boxShadow: 'var(--shadow-sm)',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '16px',
-                  backgroundColor: 'var(--color-primary-light)',
-                  color: 'var(--color-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px',
-                }}
-              >
-                <Cpu size={30} />
-              </div>
-              <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px' }}>개인화 학습</h3>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.6', marginBottom: '20px' }}>
-                나의 목소리 데이터를 학습시켜 전용 AI 음성 인식 모델을 만듭니다.
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: 'var(--color-primary)', fontSize: 'var(--text-base)' }}>
-              <span>학습 현황 보기</span>
-              <ChevronRight size={20} />
-            </div>
-          </div>
-
-          {/* Card 4: Voice Assist */}
-          <div
-            onClick={() => setCurrentTab('assist')}
-            className="card-interactive"
-            style={{
-              backgroundColor: 'var(--color-bg-surface)',
-              padding: '24px',
-              borderRadius: 'var(--border-radius-lg)',
-              border: '2px solid var(--color-border)',
-              boxShadow: 'var(--shadow-sm)',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '16px',
-                  backgroundColor: 'var(--color-secondary-light)',
-                  color: 'var(--color-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px',
-                }}
-              >
-                <MessageSquare size={30} />
-              </div>
-              <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px' }}>실사용 인식</h3>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: '1.6', marginBottom: '20px' }}>
-                일상 대화 시 마이크로 말씀하시면 선명한 글자와 음성으로 대신 전합니다.
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: 'var(--color-secondary)', fontSize: 'var(--text-base)' }}>
-              <span>대화 시작하기</span>
-              <ChevronRight size={20} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent History Preview */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '24px 28px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '2px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <TrendingUp size={24} color="var(--color-primary)" />
-            <h2 style={{ fontSize: 'var(--text-xl)' }}>최근 진단 기록</h2>
-          </div>
-          <button
-            onClick={() => setCurrentTab('history')}
-            style={{
-              fontSize: 'var(--text-sm)',
-              fontWeight: 700,
-              color: 'var(--color-primary)',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '16px'
             }}
           >
-            <span>전체 이력 보기</span>
-            <ChevronRight size={18} />
-          </button>
-        </div>
+            <div style={{ padding: '12px', backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)', borderRadius: '12px' }}>
+              <Activity size={24} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>발음 관리 (진단/연습)</h4>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>나의 발음 정확도를 확인합니다.</p>
+            </div>
+          </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {historyResults.slice(0, 3).map((item) => (
-            <div
-              key={item.id}
-              onClick={() => setCurrentTab('history')}
+          <div
+            onClick={() => setCurrentTab('history')}
+            className="card-interactive"
+            style={{
+              backgroundColor: 'var(--color-bg-surface)',
+              padding: '24px',
+              borderRadius: 'var(--border-radius-md)',
+              border: '1px solid var(--color-border)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px'
+            }}
+          >
+            <div style={{ padding: '12px', backgroundColor: 'var(--color-bg-subtle)', color: 'var(--color-text-title)', borderRadius: '12px' }}>
+              <BookOpen size={24} />
+            </div>
+            <div>
+              <h4 style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>이용 기록</h4>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>과거 대화 및 학습 기록을 봅니다.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* FULLSCREEN / BIG TEXT MODAL FOR SENIORS & PARTNERS */}
+      {bigViewText && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 300,
+            backgroundColor: '#0f172a',
+            color: '#ffffff',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            padding: '40px 24px',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setBigViewText(null)}
               style={{
+                color: '#ffffff',
+                backgroundColor: 'rgba(255,255,255,0.15)',
+                padding: '12px 20px',
+                borderRadius: 'var(--border-radius-full)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '16px 20px',
-                backgroundColor: 'var(--color-bg-subtle)',
-                borderRadius: 'var(--border-radius-md)',
-                cursor: 'pointer',
+                gap: '8px',
+                fontSize: 'var(--text-base)',
+                fontWeight: 700,
               }}
             >
-              <div>
-                <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--color-text-title)' }}>
-                  {item.date} 진단
-                </span>
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginLeft: '12px' }}>
-                  취약 음소: {item.weakPhonemes.map(w => w.phoneme).join(', ')}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: 'var(--text-xl)', fontWeight: 900, color: 'var(--color-primary)' }}>
-                  {item.overallScore}점
-                </span>
-                <ChevronRight size={20} color="var(--color-text-muted)" />
-              </div>
+              <X size={24} />
+              <span>화면 닫기</span>
+            </button>
+          </div>
+
+          <div style={{ textAlign: 'center', maxWidth: '900px', margin: '0 auto' }}>
+            <p style={{ fontSize: 'var(--text-lg)', color: '#94a3b8', marginBottom: '24px' }}>
+              대화 상대방에게 이 화면을 보여주세요
+            </p>
+            <div
+              style={{
+                fontSize: 'clamp(2rem, 5vw, 3.8rem)',
+                fontWeight: 900,
+                lineHeight: 1.4,
+                wordBreak: 'keep-all',
+                color: '#38bdf8',
+              }}
+            >
+              "{bigViewText}"
             </div>
-          ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+            <SeniorButton
+              variant="secondary"
+              size="large"
+              icon={<Volume2 size={24} />}
+              onClick={() => handleSpeakAloud(bigViewText)}
+            >
+              소리로 읽어주기
+            </SeniorButton>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

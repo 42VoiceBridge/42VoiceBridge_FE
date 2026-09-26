@@ -1,0 +1,44 @@
+/* src/styles/tailwind_utils.css */
+/* Minimal subset of Tailwind utilities used in the Stitch mockup */
+/* Spacing */
+.px-space-sm { padding-left: 0.75rem; padding-right: 0.75rem; }
+.px-space-md { padding-left: 1rem; padding-right: 1rem; }
+.px-space-lg { padding-left: 1.5rem; padding-right: 1.5rem; }
+.px-space-xl { padding-left: 2rem; padding-right: 2rem; }
+.py-space-sm { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+.py-space-md { padding-top: 1rem; padding-bottom: 1rem; }
+.py-space-lg { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.py-space-xl { padding-top: 2rem; padding-bottom: 2rem; }
+.gap-space-sm { gap: 0.5rem; }
+.gap-space-md { gap: 1rem; }
+.gap-space-lg { gap: 1.5rem; }
+.gap-space-xl { gap: 2rem; }
+/* Typography */
+.font-headline-sm { font-size: var(--text-sm); font-weight: 600; }
+.font-headline-md { font-size: var(--text-base); font-weight: 600; }
+.font-headline-lg { font-size: var(--text-lg); font-weight: 700; }
+.font-body-sm { font-size: var(--text-sm); }
+.font-body-md { font-size: var(--text-md); }
+.font-body-lg { font-size: var(--text-lg); }
+.font-caption { font-size: var(--text-xs); }
+.font-label-md { font-size: var(--text-base); }
+.font-label-lg { font-size: var(--text-lg); }
+/* Colors */
+.bg-primary { background-color: var(--color-primary); }
+.bg-primary-fixed { background-color: var(--color-primary-fixed); }
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-surface { background-color: var(--color-bg-surface); }
+.text-primary { color: var(--color-primary); }
+.text-on-primary { color: var(--color-on-primary); }
+.text-on-primary-fixed { color: var(--color-on-primary-fixed); }
+.text-on-surface { color: var(--color-on-surface); }
+.text-on-surface-variant { color: var(--color-on-surface-variant); }
+/* Rounded */
+.rounded-xl { border-radius: var(--border-radius-xl); }
+.rounded-full { border-radius: 9999px; }
+/* Shadows */
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+/* Misc */
+.backdrop-blur-xl { backdrop-filter: blur(20px); }
+.bg-surface\/90 { background-color: rgba(var(--color-bg-surface-rgb), 0.9); }

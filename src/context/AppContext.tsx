@@ -24,7 +24,9 @@ export type NavTab =
   | 'assist'
   | 'history'
   | 'login'
-  | 'register';
+  | 'register'
+  | 'personal'
+  | 'settings';
 
 interface AppContextType {
   user: User | null;

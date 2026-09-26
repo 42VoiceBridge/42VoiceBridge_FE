@@ -1,5 +1,6 @@
 /* Global Senior-Friendly Base Styles */
 @import './variables.css';
+@import './tailwind_utils.css';
 
 *,
 *::before,

@@ -8,25 +8,15 @@ export const AppHeader: React.FC = () => {
   const { user, currentTab, setCurrentTab, logout } = useApp();
 
   const navItems: { id: NavTab; label: string; iconLabel: string }[] = [
-    { id: 'dashboard', label: '홈 (대시보드)', iconLabel: '🏠' },
-    { id: 'diagnosis', label: '발음 진단', iconLabel: '🎙️' },
-    { id: 'practice', label: '추천 문장', iconLabel: '📖' },
-    { id: 'personalization', label: '개인화 학습', iconLabel: '🧠' },
-    { id: 'assist', label: '실사용 인식', iconLabel: '💬' },
-    { id: 'history', label: '진단 이력', iconLabel: '📊' },
+    { id: 'dashboard', label: '홈', iconLabel: '🏠' },
+    { id: 'personalization', label: 'AI 학습', iconLabel: '🧠' },
+    { id: 'diagnosis', label: '발음 관리', iconLabel: '🎤' },
+    { id: 'history', label: '기록', iconLabel: '📜' },
+    { id: 'settings', label: '설정', iconLabel: '⚙️' },
   ];
 
   return (
-    <header
-      style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        backgroundColor: 'var(--color-bg-surface)',
-        borderBottom: '2px solid var(--color-border)',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
+    <header className="bg-surface backdrop-blur-xl sticky top-0 z-10 border-b border-border shadow-sm">
       {/* Top Banner Row */}
       <div
         style={{
@@ -188,7 +178,7 @@ export const AppHeader: React.FC = () => {
             }}
           >
             {navItems.map((item) => {
-              const isActive = currentTab === item.id;
+              const isActive = currentTab === item.id || (item.id === 'diagnosis' && currentTab === 'practice');
               return (
                 <button
                   key={item.id}
