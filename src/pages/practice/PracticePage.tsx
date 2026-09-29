@@ -6,7 +6,7 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+
 import { useApp } from '../../context/AppContext';
 import type { PracticeSentence } from '../../types';
 import { SeniorButton } from '../../components/common/SeniorButton';
@@ -14,7 +14,7 @@ import { TTSButton } from '../../components/common/TTSButton';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 
 export const PracticePage: React.FC = () => {
-  const { practiceList, updatePracticeScore, setCurrentTab } = useApp();
+  const { practiceList, setCurrentTab } = useApp();
   const [selectedPhoneme, setSelectedPhoneme] = useState<string>('all');
   const [activeSentence, setActiveSentence] = useState<PracticeSentence | null>(null);
 
@@ -57,23 +57,7 @@ export const PracticePage: React.FC = () => {
 
   const handleStopPracticeRecord = () => {
     setIsRecording(false);
-    setHasRecorded(true);
-
-    // Mock realistic AI evaluation score
-    const newScore = Math.floor(Math.random() * 16) + 82; // 82 ~ 97
-    setPracticeScore(newScore);
-
-    if (activeSentence) {
-      updatePracticeScore(activeSentence.id, newScore);
-    }
-
-    if (newScore >= 85) {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.6 },
-      });
-    }
+    alert('발음 관리 서버(백엔드) 연동 준비 중입니다.');
   };
 
   return (

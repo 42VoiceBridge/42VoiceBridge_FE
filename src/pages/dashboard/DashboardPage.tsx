@@ -3,7 +3,6 @@ import {
   Mic,
   BrainCircuit,
   Activity,
-  MessageSquare,
   ArrowRight,
   BookOpen,
   Volume2,
@@ -20,28 +19,20 @@ import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { speakText } from '../../utils/audioUtils';
 
 export const DashboardPage: React.FC = () => {
-  const { user, personalization, assistMessages, addAssistMessage, setCurrentTab } = useApp();
+  const { user, assistMessages, setCurrentTab } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bigViewText, setBigViewText] = useState<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
 
-  // Simulated live demo examples
-  const demoSamples = [
-    { original: '따..듯..한 물.. 한.. 잔.. 주..세..요', corrected: '따뜻한 물 한 잔만 부탁드립니다.', confidence: 96 },
-    { original: '약..국.. 이.. 어..디..에 있..나..요', corrected: '가까운 약국이 어디에 있나요?', confidence: 94 },
-    { original: '오..느.. 날..씨.. 조..아..요', corrected: '오늘 날씨가 참 좋습니다.', confidence: 97 },
-    { original: '도..와.. 주..셔..서 감..사..합..니..다', corrected: '도와주셔서 정말 감사합니다.', confidence: 98 },
-  ];
+
 
   const handleStartAssistRecord = () => {
-    setIsRecording(true);
+    alert('말해서 전달하기 기능은 현재 백엔드 연동 준비 중입니다.');
   };
 
   const handleStopAssistRecord = () => {
     setIsRecording(false);
-    // Pick a realistic sample to simulate personal model inference
-    const sample = demoSamples[Math.floor(Math.random() * demoSamples.length)];
-    addAssistMessage(sample.original, sample.corrected, sample.confidence);
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -50,8 +41,16 @@ export const DashboardPage: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleSpeakAloud = (text: string) => {
-    speakText(text, 0.9);
+  const handleSpeakAloud = async (text: string) => {
+    if (speakingId) return;
+    try {
+      await speakText(text, 0.9);
+    } catch (error: any) {
+      console.error('TTS error:', error);
+      alert('음성 재생 기능 준비 중입니다.');
+    } finally {
+      setSpeakingId(null);
+    }
   };
 
   return (
@@ -213,7 +212,7 @@ export const DashboardPage: React.FC = () => {
                     icon={<Volume2 size={20} />}
                     onClick={() => handleSpeakAloud(msg.correctedText)}
                   >
-                    또렷하게 들려주기
+                    {speakingId === msg.id ? '듣는 중...' : '또렷하게 들려주기'}
                   </SeniorButton>
 
                   <SeniorButton
@@ -270,29 +269,17 @@ export const DashboardPage: React.FC = () => {
               AI가 내 목소리에 맞춰 똑똑해지고 있어요!
             </h3>
             <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', lineHeight: 1.6, marginBottom: '20px' }}>
-              내 목소리를 자주 들려줄수록, AI가 나의 발음을 더 정확하게 이해합니다.<br/>
-              현재 맞춤형 인식률: <strong>{personalization.personalizedAccuracy}%</strong>
+              내 목소리를 자주 들려줄수록, AI가 나의 발음을 더 정확하게 이해합니다.
             </p>
             <SeniorButton variant="secondary" size="normal" icon={<ArrowRight size={20} />}>
-              음성 데이터 등록하러 가기
+              학습 현황 보러가기
             </SeniorButton>
           </div>
           
-          <div style={{ backgroundColor: 'var(--color-bg-subtle)', padding: '24px', borderRadius: 'var(--border-radius-md)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700 }}>음성 데이터 수집 진행률</span>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 800, color: 'var(--color-secondary)' }}>
-                {personalization.collectedCount} / {personalization.targetCount}
-              </span>
-            </div>
-            <div style={{ height: '12px', backgroundColor: 'var(--color-border)', borderRadius: '6px', overflow: 'hidden' }}>
-              <div style={{ 
-                width: `${(personalization.collectedCount / personalization.targetCount) * 100}%`, 
-                height: '100%', 
-                backgroundColor: 'var(--color-secondary)',
-                transition: 'width 0.5s ease-in-out'
-              }} />
-            </div>
+          <div style={{ backgroundColor: 'var(--color-bg-subtle)', padding: '24px', borderRadius: 'var(--border-radius-md)', textAlign: 'center' }}>
+             <p style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--color-text-muted)' }}>
+               개인화 학습 상세 데이터는 <br/> [나의 AI 학습] 페이지에서 제공됩니다.
+             </p>
           </div>
         </div>
       </section>
@@ -412,7 +399,7 @@ export const DashboardPage: React.FC = () => {
               icon={<Volume2 size={24} />}
               onClick={() => handleSpeakAloud(bigViewText)}
             >
-              소리로 읽어주기
+              {speakingId === 'big-view' ? '듣는 중...' : '소리로 읽어주기'}
             </SeniorButton>
           </div>
         </div>

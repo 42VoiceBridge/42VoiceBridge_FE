@@ -16,6 +16,8 @@ import { SeniorButton } from '../../components/common/SeniorButton';
 import { TTSButton } from '../../components/common/TTSButton';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { AudioRecorderService } from '../../utils/audioUtils';
+import { createDiagnosisSessionApi, uploadDiagnosisRecordingApi } from '../../api/diagnosis';
+import type { DiagnosisSentenceDto } from '../../api/diagnosis';
 
 type Step = 'intro' | 'recording' | 'analyzing' | 'result';
 
@@ -27,24 +29,46 @@ export const DiagnosisPage: React.FC = () => {
   const [recordedTime, setRecordedTime] = useState(0);
   const [hasRecorded, setHasRecorded] = useState(false);
   const [currentResult, setCurrentResult] = useState<DiagnosisResult | null>(null);
+  
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sentences, setSentences] = useState<DiagnosisSentenceDto[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const recorderRef = useRef<AudioRecorderService | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const currentSentence = diagnosisSentences[currentIndex];
+  const currentSentence = sentences[currentIndex] || diagnosisSentences[0];
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (recorderRef.current) {
+        recorderRef.current.stopRecording().catch(() => {});
+      }
     };
   }, []);
 
   // 1. Intro -> Start
-  const handleStartDiagnosis = () => {
-    setCurrentIndex(0);
-    setStep('recording');
-    setHasRecorded(false);
-    setRecordedTime(0);
+  const handleStartDiagnosis = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    
+    try {
+      const res = await createDiagnosisSessionApi(token);
+      if (!res.success || !res.data) throw new Error(res.error?.message || '세션 생성 실패');
+      
+      setSessionId(res.data.sessionId);
+      setSentences(res.data.sentences);
+      setCurrentIndex(0);
+      setStep('recording');
+      setHasRecorded(false);
+      setRecordedTime(0);
+    } catch (err: any) {
+      alert(err.message || '진단 세션 생성 중 오류가 발생했습니다.');
+    }
   };
 
   // 2. Start Recording
@@ -66,16 +90,34 @@ export const DiagnosisPage: React.FC = () => {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    
     if (recorderRef.current) {
-      await recorderRef.current.stopRecording();
+      try {
+        setUploading(true);
+        const audioUrl = await recorderRef.current.stopRecording();
+        
+        const token = localStorage.getItem('accessToken');
+        if (token && sessionId && sentences[currentIndex]) {
+          const blob = await fetch(audioUrl).then((r) => r.blob());
+          const sentenceId = sentences[currentIndex].sentenceId;
+          
+          const uploadRes = await uploadDiagnosisRecordingApi(token, sessionId, sentenceId, blob);
+          if (!uploadRes.success) throw new Error(uploadRes.error?.message || '업로드 실패');
+        }
+      } catch (err: any) {
+        alert(err.message || '녹음 업로드 중 오류가 발생했습니다.');
+      } finally {
+        setUploading(false);
+      }
     }
+    
     setIsRecording(false);
     setHasRecorded(true);
   };
 
   // 4. Next sentence or finish
   const handleNextSentence = () => {
-    if (currentIndex < diagnosisSentences.length - 1) {
+    if (currentIndex < sentences.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setHasRecorded(false);
       setRecordedTime(0);
@@ -248,9 +290,9 @@ export const DiagnosisPage: React.FC = () => {
     );
   }
 
-  // STAGE 2: RECORDING & SENTENCE PROMPT
   if (step === 'recording') {
-    const progressPercent = Math.round(((currentIndex + 1) / diagnosisSentences.length) * 100);
+    const totalSentences = sentences.length || 1;
+    const progressPercent = Math.round(((currentIndex + 1) / totalSentences) * 100);
 
     return (
       <div style={{ maxWidth: '840px', margin: '30px auto', padding: '0 16px' }}>
@@ -284,7 +326,7 @@ export const DiagnosisPage: React.FC = () => {
               border: '1.5px solid var(--color-primary-border)',
             }}
           >
-            문장 {currentIndex + 1} / {diagnosisSentences.length}
+            문장 {currentIndex + 1} / {sentences.length}
           </div>
         </div>
 
@@ -353,6 +395,10 @@ export const DiagnosisPage: React.FC = () => {
                 <span style={{ color: 'var(--color-danger)' }}>
                   🔴 녹음 중... ({formatTime(recordedTime)})
                 </span>
+              ) : uploading ? (
+                <span style={{ color: 'var(--color-primary)' }}>
+                  ⏳ 업로드 중...
+                </span>
               ) : hasRecorded ? (
                 <span style={{ color: 'var(--color-secondary)' }}>
                   ✅ 녹음 완료 ({formatTime(recordedTime)})
@@ -395,7 +441,7 @@ export const DiagnosisPage: React.FC = () => {
                 icon={<ArrowRight size={28} />}
                 onClick={handleNextSentence}
               >
-                {currentIndex < diagnosisSentences.length - 1 ? '다음 문장으로' : '분석 결과 보기'}
+                {currentIndex < sentences.length - 1 ? '다음 문장으로' : '분석 결과 보기'}
               </SeniorButton>
             )}
           </div>

@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
-import { speakText, stopSpeech } from '../../utils/audioUtils';
+import { speakText as fallbackSpeakText, stopSpeech } from '../../utils/audioUtils';
+import { useApp } from '../../context/AppContext';
 
 interface TTSButtonProps {
   text: string;
   label?: string;
   size?: 'normal' | 'large';
-  rate?: number;
 }
 
 export const TTSButton: React.FC<TTSButtonProps> = ({
   text,
   label = '소리로 듣기',
   size = 'normal',
-  rate = 0.85,
 }) => {
+  const { speechRate } = useApp();
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleSpeak = async (e: React.MouseEvent) => {
@@ -26,8 +26,15 @@ export const TTSButton: React.FC<TTSButtonProps> = ({
     }
 
     setIsPlaying(true);
+    
+    // 백엔드 Recognition 및 Confirmation API 구현 전까지 
+    // 실제 백엔드 TTS API 호출을 차단하고 브라우저 기본 TTS로 Fallback 합니다.
+    // 기존에 존재하던 crypto.randomUUID() 가짜 confirmationId 생성 코드를 제거했습니다.
     try {
-      await speakText(text, rate);
+      await fallbackSpeakText(text, speechRate);
+    } catch (error: any) {
+      console.error('TTS error:', error);
+      alert('음성 재생 기능 준비 중입니다.');
     } finally {
       setIsPlaying(false);
     }

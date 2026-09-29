@@ -1,21 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp,
-  Calendar,
   ChevronDown,
   ChevronUp,
   User,
   Mic,
+  Activity
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
+import type { RecognitionResponse } from '../../api/recognition';
+import { getRecognitionsApi, getRecognitionApi } from '../../api/recognition';
 
 export const HistoryPage: React.FC = () => {
-  const { historyResults, user, setCurrentTab } = useApp();
-  const [expandedId, setExpandedId] = useState<string | null>(historyResults[0]?.id || null);
+  const { user, setCurrentTab } = useApp();
+  
+  const [recognitions, setRecognitions] = useState<RecognitionResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [detailData, setDetailData] = useState<Record<string, RecognitionResponse>>({});
 
-  const toggleExpand = (id: string) => {
-    setExpandedId(expandedId === id ? null : id);
+  useEffect(() => {
+    const fetchHistory = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('로그인이 필요합니다.');
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await getRecognitionsApi(token, 0, 20);
+        if (res.success && res.data) {
+          setRecognitions(res.data.content);
+        } else {
+          throw new Error(res.error?.message || '기록을 불러오지 못했습니다.');
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, []);
+
+  const toggleExpand = async (id: string) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(id);
+    
+    if (!detailData[id]) {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        try {
+          const res = await getRecognitionApi(token, id);
+          if (res.success && res.data) {
+            setDetailData(prev => ({ ...prev, [id]: res.data! }));
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    }
   };
 
   return (
@@ -53,10 +102,10 @@ export const HistoryPage: React.FC = () => {
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: 'var(--text-2xl)' }}>{user?.name || '홍길동'}님의 발음 기록실</h1>
+              <h1 style={{ fontSize: 'var(--text-2xl)' }}>{user?.name || '사용자'}님의 음성 인식 기록실</h1>
             </div>
             <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-              가입일: {user?.createdAt || '2026.08.01'} | 총 {historyResults.length}회 진단 완료
+              총 {recognitions.length}건의 기록이 있습니다.
             </p>
           </div>
         </div>
@@ -65,217 +114,192 @@ export const HistoryPage: React.FC = () => {
           variant="primary"
           size="normal"
           icon={<Mic size={20} />}
-          onClick={() => setCurrentTab('diagnosis')}
+          onClick={() => setCurrentTab('dashboard')}
         >
-          새 발음 진단하기
+          말해서 전달하기 가기
         </SeniorButton>
       </div>
 
-      {/* Score Progress Trend (성장 그래프) */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '30px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '2px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-          marginBottom: '32px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <TrendingUp size={26} color="var(--color-primary)" />
-          <h2 style={{ fontSize: 'var(--text-2xl)' }}>발음 정확도 향상 추이</h2>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+          기록을 불러오는 중입니다...
         </div>
-        <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '28px' }}>
-          첫 진단(63점) 대비 현재 <strong>+19점</strong> 대폭 향상되었습니다! 꾸준한 연습의 결과입니다.
-        </p>
+      ) : error ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-danger)' }}>
+          {error}
+        </div>
+      ) : recognitions.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--border-radius-lg)', border: '2px solid var(--color-border)' }}>
+          <Mic size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 16px' }} />
+          <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px' }}>아직 기록이 없습니다.</h3>
+          <p style={{ color: 'var(--color-text-muted)' }}>말해서 전달하기를 사용하면 기록이 여기에 표시됩니다.</p>
+        </div>
+      ) : (
+        <>
+          {/* Score Progress Trend */}
+          <div
+            style={{
+              backgroundColor: 'var(--color-bg-surface)',
+              padding: '30px',
+              borderRadius: 'var(--border-radius-lg)',
+              border: '2px solid var(--color-border)',
+              boxShadow: 'var(--shadow-sm)',
+              marginBottom: '32px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <TrendingUp size={26} color="var(--color-primary)" />
+              <h2 style={{ fontSize: 'var(--text-2xl)' }}>인식 신뢰도 추이</h2>
+            </div>
+            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '28px' }}>
+              최근 기록된 음성 인식의 신뢰도(0~100점) 변화를 보여줍니다.
+            </p>
 
-        {/* Visual Bar Chart */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-around',
-            height: '220px',
-            padding: '16px 8px 30px',
-            backgroundColor: 'var(--color-bg-subtle)',
-            borderRadius: 'var(--border-radius-md)',
-            position: 'relative',
-          }}
-        >
-          {historyResults
-            .slice()
-            .reverse()
-            .map((item, index) => {
-              const heightPercent = Math.round((item.overallScore / 100) * 160);
-              const isLatest = index === historyResults.length - 1;
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'space-around',
+                height: '220px',
+                padding: '16px 8px 30px',
+                backgroundColor: 'var(--color-bg-subtle)',
+                borderRadius: 'var(--border-radius-md)',
+                position: 'relative',
+              }}
+            >
+              {recognitions
+                .slice(0, 10)
+                .reverse()
+                .map((item, index, arr) => {
+                  const score = Math.round(item.confidence * 100);
+                  const heightPercent = Math.round((score / 100) * 160);
+                  const isLatest = index === arr.length - 1;
 
-              return (
-                <div
-                  key={item.id}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px',
-                    width: '64px',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: 'var(--text-base)',
-                      fontWeight: 900,
-                      color: isLatest ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                    }}
-                  >
-                    {item.overallScore}점
-                  </span>
+                  return (
+                    <div
+                      key={item.recognitionId}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        width: '64px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 'var(--text-base)',
+                          fontWeight: 900,
+                          color: isLatest ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                        }}
+                      >
+                        {score}점
+                      </span>
+                      <div
+                        style={{
+                          width: '42px',
+                          height: `${heightPercent}px`,
+                          borderRadius: '8px 8px 0 0',
+                          backgroundColor: isLatest ? 'var(--color-primary)' : 'var(--color-border)',
+                          boxShadow: isLatest ? 'var(--shadow-md)' : 'none',
+                          transition: 'height 0.4s ease',
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* History Inspection List */}
+          <div>
+            <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Activity size={24} color="var(--color-secondary)" />
+              <span>음성 인식 상세 기록</span>
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {recognitions.map((item) => {
+                const isExpanded = expandedId === item.recognitionId;
+                const score = Math.round(item.confidence * 100);
+
+                return (
                   <div
+                    key={item.recognitionId}
                     style={{
-                      width: '42px',
-                      height: `${heightPercent}px`,
-                      borderRadius: '8px 8px 0 0',
-                      backgroundColor: isLatest ? 'var(--color-primary)' : 'var(--color-border)',
-                      boxShadow: isLatest ? 'var(--shadow-md)' : 'none',
-                      transition: 'height 0.4s ease',
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      fontWeight: 700,
-                      color: 'var(--color-text-muted)',
-                      whiteSpace: 'nowrap',
-                      position: 'absolute',
-                      bottom: '8px',
+                      backgroundColor: 'var(--color-bg-surface)',
+                      borderRadius: 'var(--border-radius-lg)',
+                      border: '2px solid var(--color-border)',
+                      boxShadow: 'var(--shadow-sm)',
+                      overflow: 'hidden',
                     }}
                   >
-                    {item.date.slice(5)}
-                  </span>
-                </div>
-              );
-            })}
-        </div>
-      </div>
-
-      {/* History Inspection List */}
-      <div>
-        <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Calendar size={24} color="var(--color-secondary)" />
-          <span>회차별 진단 상세 기록</span>
-        </h2>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {historyResults.map((item) => {
-            const isExpanded = expandedId === item.id;
-
-            return (
-              <div
-                key={item.id}
-                style={{
-                  backgroundColor: 'var(--color-bg-surface)',
-                  borderRadius: 'var(--border-radius-lg)',
-                  border: '2px solid var(--color-border)',
-                  boxShadow: 'var(--shadow-sm)',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Header Row (Clickable) */}
-                <div
-                  onClick={() => toggleExpand(item.id)}
-                  style={{
-                    padding: '24px 28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    cursor: 'pointer',
-                    backgroundColor: isExpanded ? 'var(--color-bg-subtle)' : 'var(--color-bg-surface)',
-                    transition: 'background-color 0.15s ease',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                     <div
+                      onClick={() => toggleExpand(item.recognitionId)}
                       style={{
-                        fontSize: 'var(--text-2xl)',
-                        fontWeight: 900,
-                        color: 'var(--color-primary)',
+                        padding: '24px 28px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        backgroundColor: isExpanded ? 'var(--color-bg-subtle)' : 'var(--color-bg-surface)',
+                        transition: 'background-color 0.15s ease',
                       }}
                     >
-                      {item.overallScore}점
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--color-text-title)' }}>
-                        {item.date} 진단 리포트
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                        <div
+                          style={{
+                            fontSize: 'var(--text-2xl)',
+                            fontWeight: 900,
+                            color: 'var(--color-primary)',
+                          }}
+                        >
+                          {score}점
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--color-text-title)' }}>
+                            {item.recognizedText.length > 20 ? item.recognizedText.substring(0, 20) + '...' : item.recognizedText}
+                          </div>
+                          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                            사용 모델: {item.modelUsed}
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                        취약 음소: {item.weakPhonemes.map((w) => `'${w.phoneme}' (${w.accuracy}%)`).join(', ')}
-                      </div>
-                    </div>
-                  </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-muted)' }}>
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700 }}>
-                      {isExpanded ? '접기' : '상세보기'}
-                    </span>
-                    {isExpanded ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
-                  </div>
-                </div>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                  <div style={{ padding: '24px 28px', borderTop: '2px solid var(--color-border)' }}>
-                    {/* Metrics Breakdown */}
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                        gap: '16px',
-                        marginBottom: '20px',
-                      }}
-                    >
-                      <div style={{ padding: '14px', backgroundColor: 'var(--color-bg-subtle)', borderRadius: '8px' }}>
-                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>발음 정확도</span>
-                        <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-primary)' }}>
-                          {item.metrics.accuracy}%
-                        </div>
-                      </div>
-                      <div style={{ padding: '14px', backgroundColor: 'var(--color-bg-subtle)', borderRadius: '8px' }}>
-                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>유창도</span>
-                        <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-secondary)' }}>
-                          {item.metrics.fluency}%
-                        </div>
-                      </div>
-                      <div style={{ padding: '14px', backgroundColor: 'var(--color-bg-subtle)', borderRadius: '8px' }}>
-                        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>소리 명료도</span>
-                        <div style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: '#0284c7' }}>
-                          {item.metrics.clarity}%
-                        </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-muted)' }}>
+                        <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700 }}>
+                          {isExpanded ? '접기' : '상세보기'}
+                        </span>
+                        {isExpanded ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
                       </div>
                     </div>
 
-                    {/* Specialist Comment */}
-                    <div
-                      style={{
-                        padding: '16px 20px',
-                        backgroundColor: 'var(--color-primary-light)',
-                        borderRadius: 'var(--border-radius-md)',
-                        border: '1.5px solid var(--color-primary-border)',
-                      }}
-                    >
-                      <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '4px' }}>
-                        💬 당시 언어분석 피드백
+                    {isExpanded && (
+                      <div style={{ padding: '24px 28px', borderTop: '2px solid var(--color-border)' }}>
+                        <div
+                          style={{
+                            padding: '16px 20px',
+                            backgroundColor: 'var(--color-primary-light)',
+                            borderRadius: 'var(--border-radius-md)',
+                            border: '1.5px solid var(--color-primary-border)',
+                          }}
+                        >
+                          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '4px' }}>
+                            🎤 인식된 전체 텍스트
+                          </div>
+                          <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-body)', lineHeight: 1.6 }}>
+                            {detailData[item.recognitionId] ? detailData[item.recognitionId].recognizedText : item.recognizedText}
+                          </p>
+                        </div>
                       </div>
-                      <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-body)', lineHeight: 1.6 }}>
-                        {item.comment}
-                      </p>
-                    </div>
+                    )}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

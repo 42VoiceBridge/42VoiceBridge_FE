@@ -4,7 +4,18 @@ import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
 
 export const SettingsPage: React.FC = () => {
-  const { user, fontSize, setFontSize, highContrast, setHighContrast, logout } = useApp();
+  const { 
+    user, 
+    fontSize, 
+    setFontSize, 
+    highContrast, 
+    setHighContrast,
+    autoTtsPlayback,
+    setAutoTtsPlayback,
+    speechRate,
+    setSpeechRate,
+    logout 
+  } = useApp();
 
   return (
     <div style={{ maxWidth: '800px', margin: '30px auto', padding: '0 16px 60px' }}>
@@ -59,15 +70,38 @@ export const SettingsPage: React.FC = () => {
                 <strong style={{ fontSize: 'var(--text-lg)', display: 'block' }}>AI 변환 음성 자동 출력</strong>
                 <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>변환 완료 시 자동으로 소리를 냅니다.</span>
               </div>
-              <input type="checkbox" defaultChecked style={{ width: '24px', height: '24px' }} />
+              <input 
+                type="checkbox" 
+                checked={autoTtsPlayback} 
+                onChange={(e) => setAutoTtsPlayback(e.target.checked)} 
+                style={{ width: '24px', height: '24px' }} 
+              />
             </div>
             
             <div>
               <strong style={{ fontSize: 'var(--text-lg)', display: 'block', marginBottom: '8px' }}>음성 출력 속도</strong>
               <div style={{ display: 'flex', gap: '12px' }}>
-                <SeniorButton variant="outline" size="normal">느리게</SeniorButton>
-                <SeniorButton variant="primary" size="normal">보통</SeniorButton>
-                <SeniorButton variant="outline" size="normal">빠르게</SeniorButton>
+                <SeniorButton 
+                  variant={speechRate === 0.75 ? "primary" : "outline"} 
+                  size="normal"
+                  onClick={() => setSpeechRate(0.75)}
+                >
+                  느리게
+                </SeniorButton>
+                <SeniorButton 
+                  variant={speechRate === 1.0 ? "primary" : "outline"} 
+                  size="normal"
+                  onClick={() => setSpeechRate(1.0)}
+                >
+                  보통
+                </SeniorButton>
+                <SeniorButton 
+                  variant={speechRate === 1.25 ? "primary" : "outline"} 
+                  size="normal"
+                  onClick={() => setSpeechRate(1.25)}
+                >
+                  빠르게
+                </SeniorButton>
               </div>
             </div>
           </div>
@@ -91,7 +125,6 @@ export const SettingsPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <SeniorButton variant={fontSize === 'normal' ? 'primary' : 'outline'} size="normal" onClick={() => setFontSize('normal')}>보통</SeniorButton>
                 <SeniorButton variant={fontSize === 'large' ? 'primary' : 'outline'} size="normal" onClick={() => setFontSize('large')}>크게</SeniorButton>
-                <SeniorButton variant={fontSize === 'huge' ? 'primary' : 'outline'} size="normal" onClick={() => setFontSize('huge')}>아주 크게</SeniorButton>
               </div>
             </div>
             
@@ -121,13 +154,13 @@ export const SettingsPage: React.FC = () => {
             <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
               <strong style={{ fontSize: 'var(--text-lg)', display: 'block' }}>프로필 정보</strong>
               <div style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                이름: {user?.name} <br/>
-                이메일: {user?.email}
+                이름: {user?.name || '정보 없음'} <br/>
+                이메일: {user?.email || '정보 없음'}
               </div>
             </div>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <SeniorButton variant="outline" size="normal" icon={<LogOut size={20} />} onClick={logout}>로그아웃</SeniorButton>
-              <SeniorButton variant="ghost" size="normal" style={{ color: 'var(--color-danger)' }}>회원 탈퇴</SeniorButton>
+              <SeniorButton variant="ghost" size="normal" disabled={true} style={{ color: 'var(--color-text-muted)' }}>회원 탈퇴 (기능 준비 중)</SeniorButton>
             </div>
           </div>
         </section>
@@ -150,7 +183,7 @@ export const SettingsPage: React.FC = () => {
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>
                 서버에 저장된 모든 음성 학습 데이터를 삭제합니다. 이 작업은 되돌릴 수 없습니다.
               </p>
-              <SeniorButton variant="danger" size="normal">음성 데이터 삭제</SeniorButton>
+              <SeniorButton variant="secondary" size="normal" disabled={true}>음성 데이터 삭제 (기능 준비 중)</SeniorButton>
             </div>
           </div>
         </section>

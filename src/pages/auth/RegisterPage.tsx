@@ -3,15 +3,17 @@ import { UserPlus, ArrowLeft } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
 
+import { signupApi } from '../../api/auth';
+
 export const RegisterPage: React.FC = () => {
-  const { register, setCurrentTab } = useApp();
+  const { login, setCurrentTab } = useApp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !password) {
       setErrorMsg('모든 필수 항목을 입력해주세요.');
@@ -21,7 +23,14 @@ export const RegisterPage: React.FC = () => {
       setErrorMsg('비밀번호가 서로 일치하지 않습니다.');
       return;
     }
-    register(name, email);
+    
+    try {
+      await signupApi(email, password, name);
+      // 회원가입 성공 시 자동 로그인 후 대시보드로 이동 (기존 Mock UX와 동일)
+      await login(email, password);
+    } catch (err: any) {
+      setErrorMsg(err.message || '회원가입에 실패했습니다.');
+    }
   };
 
   return (

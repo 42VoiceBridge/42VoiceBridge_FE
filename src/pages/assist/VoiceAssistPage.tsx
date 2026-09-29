@@ -16,28 +16,19 @@ import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { speakText } from '../../utils/audioUtils';
 
 export const VoiceAssistPage: React.FC = () => {
-  const { assistMessages, addAssistMessage } = useApp();
+  const { assistMessages } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bigViewText, setBigViewText] = useState<string | null>(null);
 
-  // Simulated live demo examples
-  const demoSamples = [
-    { original: '따..듯..한 물.. 한.. 잔.. 주..세..요', corrected: '따뜻한 물 한 잔만 부탁드립니다.', confidence: 96 },
-    { original: '약..국.. 이.. 어..디..에 있..나..요', corrected: '가까운 약국이 어디에 있나요?', confidence: 94 },
-    { original: '오..느.. 날..씨.. 조..아..요', corrected: '오늘 날씨가 참 좋습니다.', confidence: 97 },
-    { original: '도..와.. 주..셔..서 감..사..합..니..다', corrected: '도와주셔서 정말 감사합니다.', confidence: 98 },
-  ];
+
 
   const handleStartAssistRecord = () => {
-    setIsRecording(true);
+    alert('실시간 음성 변환(Voice Assist) 기능은 현재 준비 중입니다.');
   };
 
   const handleStopAssistRecord = () => {
     setIsRecording(false);
-    // Pick a realistic sample to simulate personal model inference
-    const sample = demoSamples[Math.floor(Math.random() * demoSamples.length)];
-    addAssistMessage(sample.original, sample.corrected, sample.confidence);
   };
 
   const handleCopy = (id: string, text: string) => {

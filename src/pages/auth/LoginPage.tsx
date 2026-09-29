@@ -7,16 +7,27 @@ export const LoginPage: React.FC = () => {
   const { login, setCurrentTab } = useApp();
   const [email, setEmail] = useState('chaeyeong@example.com');
   const [password, setPassword] = useState('password123');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    login(email, '홍길동');
+    if (!email || !password) return;
+    
+    setIsLoading(true);
+    setErrorMsg(null);
+    try {
+      await login(email, password);
+    } catch (err: any) {
+      setErrorMsg(err.message || '로그인에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDemoLogin = () => {
-    login('chaeyeong@example.com', '홍길동');
+  const handleDemoLogin = async () => {
+    await login('chaeyeong@example.com');
   };
 
   return (
@@ -142,8 +153,14 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        <SeniorButton type="submit" variant="primary" size="large" fullWidth style={{ marginTop: '8px' }}>
-          로그인
+        {errorMsg && (
+          <div style={{ color: 'var(--color-danger)', fontSize: 'var(--text-sm)', fontWeight: 700, textAlign: 'center', marginTop: '-8px' }}>
+            {errorMsg}
+          </div>
+        )}
+
+        <SeniorButton type="submit" variant="primary" size="large" fullWidth style={{ marginTop: '8px' }} disabled={isLoading}>
+          {isLoading ? '로그인 중...' : '로그인'}
         </SeniorButton>
 
         <div style={{ textAlign: 'center', marginTop: '16px' }}>
