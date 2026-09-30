@@ -4,44 +4,57 @@ import {
   Square,
   RotateCcw,
   CheckCircle2,
-  AlertTriangle,
   Sparkles,
   ArrowRight,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../../context/AppContext';
-import { diagnosisSentences } from '../../utils/mockData';
-import type { DiagnosisResult, WeakPhoneme } from '../../types';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { TTSButton } from '../../components/common/TTSButton';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { AudioRecorderService } from '../../utils/audioUtils';
-import { createDiagnosisSessionApi, uploadDiagnosisRecordingApi } from '../../api/diagnosis';
-import type { DiagnosisSentenceDto } from '../../api/diagnosis';
+import { 
+  createDiagnosisSessionApi, 
+  uploadDiagnosisRecordingApi,
+  getDiagnosisSessionApi,
+  getRecordingResultApi
+} from '../../api/diagnosis';
+import type { 
+  DiagnosisSentenceDto,
+  DiagnosisRecordingResult,
+  DiffHighlight
+} from '../../api/diagnosis';
+import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
 type Step = 'intro' | 'recording' | 'analyzing' | 'result';
 
 export const DiagnosisPage: React.FC = () => {
-  const { addDiagnosisResult, setCurrentTab } = useApp();
+  const { setCurrentTab } = useApp();
   const [step, setStep] = useState<Step>('intro');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [recordedTime, setRecordedTime] = useState(0);
   const [hasRecorded, setHasRecorded] = useState(false);
-  const [currentResult, setCurrentResult] = useState<DiagnosisResult | null>(null);
   
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sentences, setSentences] = useState<DiagnosisSentenceDto[]>([]);
   const [uploading, setUploading] = useState(false);
 
+  // Map of sentenceId -> recordingId
+  const [recordingIds, setRecordingIds] = useState<Record<string, string>>({});
+  // Final results
+  const [actualResults, setActualResults] = useState<DiagnosisRecordingResult[]>([]);
+
   const recorderRef = useRef<AudioRecorderService | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const currentSentence = sentences[currentIndex] || diagnosisSentences[0];
+  const currentSentence = sentences[currentIndex];
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
       if (recorderRef.current) {
         recorderRef.current.stopRecording().catch(() => {});
       }
@@ -62,6 +75,8 @@ export const DiagnosisPage: React.FC = () => {
       
       setSessionId(res.data.sessionId);
       setSentences(res.data.sentences);
+      setRecordingIds({});
+      setActualResults([]);
       setCurrentIndex(0);
       setStep('recording');
       setHasRecorded(false);
@@ -96,23 +111,57 @@ export const DiagnosisPage: React.FC = () => {
         setUploading(true);
         const audioUrl = await recorderRef.current.stopRecording();
         
+        const blob = await fetch(audioUrl).then((r) => r.blob());
+        
+        // Size validation (Max 10MB)
+        if (blob.size > 10 * 1024 * 1024) {
+          alert('녹음 파일이 너무 커요. 다시 녹음해 주세요.');
+          setIsRecording(false);
+          setHasRecorded(false);
+          setUploading(false);
+          return;
+        }
+
         const token = localStorage.getItem('accessToken');
         if (token && sessionId && sentences[currentIndex]) {
-          const blob = await fetch(audioUrl).then((r) => r.blob());
           const sentenceId = sentences[currentIndex].sentenceId;
           
-          const uploadRes = await uploadDiagnosisRecordingApi(token, sessionId, sentenceId, blob);
-          if (!uploadRes.success) throw new Error(uploadRes.error?.message || '업로드 실패');
+          try {
+            const uploadRes = await uploadDiagnosisRecordingApi(token, sessionId, sentenceId, blob);
+            if (!uploadRes.success || !uploadRes.data) throw new Error(uploadRes.error?.message || '업로드 실패');
+            
+            // Store the real recordingId
+            setRecordingIds(prev => ({
+              ...prev,
+              [sentenceId]: uploadRes.data!.recordingId
+            }));
+            
+            setIsRecording(false);
+            setHasRecorded(true);
+          } catch (err: any) {
+            // Handle specific errors based on instructions
+            if (err.code === 'INVALID_STATE_TRANSITION' || err.message.includes('409')) {
+              alert('이미 완료된 진단이거나 현재 업로드할 수 없는 상태입니다.');
+            } else if (err.message.includes('401') || err.message.includes('403')) {
+              alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+            } else if (err.message.includes('400')) {
+              alert('올바르지 않은 녹음 파일입니다. 다시 녹음해주세요.');
+            } else {
+              alert(err.message || '녹음 업로드 중 오류가 발생했습니다.');
+            }
+            // Failed to upload, reset so user can try again
+            setIsRecording(false);
+            setHasRecorded(false);
+          }
         }
       } catch (err: any) {
-        alert(err.message || '녹음 업로드 중 오류가 발생했습니다.');
+        alert(err.message || '녹음 처리 중 오류가 발생했습니다.');
+        setIsRecording(false);
+        setHasRecorded(false);
       } finally {
         setUploading(false);
       }
     }
-    
-    setIsRecording(false);
-    setHasRecorded(true);
   };
 
   // 4. Next sentence or finish
@@ -124,61 +173,79 @@ export const DiagnosisPage: React.FC = () => {
     } else {
       // Completed all sentences -> Start analyzing
       setStep('analyzing');
-      setTimeout(() => {
-        finishAnalysis();
-      }, 2400);
+      pollSessionStatus();
     }
   };
 
-  // 5. Compute and show result
-  const finishAnalysis = () => {
-    const calculatedScore = Math.floor(Math.random() * 6) + 82; // 82 ~ 87
-    const weakPhonemes: WeakPhoneme[] = [
-      {
-        phoneme: 'ㄹ',
-        accuracy: 45,
-        errorType: '왜곡',
-        description: "혀끝을 잇몸에 튕기는 탄설음 'ㄹ'에서 음절 멈춤이 발생합니다.",
-      },
-      {
-        phoneme: 'ㅅ',
-        accuracy: 58,
-        errorType: '치환',
-        description: "치경마찰음 'ㅅ'에서 공기 마찰이 부족하여 부드럽게 뭉개집니다.",
-      },
-      {
-        phoneme: 'ㅈ',
-        accuracy: 68,
-        errorType: '왜곡',
-        description: "파찰음 'ㅈ'의 발화 초반 압력이 약간 낮습니다.",
-      },
-    ];
+  // 5. Poll session status
+  const pollSessionStatus = async () => {
+    if (!sessionId) return;
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
 
-    const result: DiagnosisResult = {
-      id: `diag-${Date.now()}`,
-      date: new Date().toLocaleDateString('ko-KR'),
-      overallScore: calculatedScore,
-      metrics: {
-        accuracy: calculatedScore,
-        fluency: calculatedScore - 4,
-        clarity: calculatedScore + 3,
-      },
-      weakPhonemes,
-      comment:
-        "5개 문장 모두 끝까지 훌륭하게 완독하셨습니다! 호흡과 발성 명료도가 양호하며, 'ㄹ'과 'ㅅ' 조음 연습을 지속하시면 훨씬 또렷한 전달이 가능합니다.",
-      sentenceCount: 5,
-    };
+    if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
 
-    setCurrentResult(result);
-    addDiagnosisResult(result);
-    setStep('result');
+    pollingTimerRef.current = setInterval(async () => {
+      try {
+        const res = await getDiagnosisSessionApi(token, sessionId);
+        if (res.success && res.data) {
+          if (res.data.status === 'ANALYZED') {
+            if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+            fetchResults();
+          } else {
+            // Check if any sentence is FAILED.
+            const failedSentence = res.data.sentences.find(s => s.recordingStatus === 'FAILED');
+            if (failedSentence) {
+               if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+               alert('일부 녹음의 분석에 실패했습니다. 해당 문장을 다시 녹음해주세요.');
+               // Re-route to the failed sentence
+               const failedIndex = sentences.findIndex(s => s.sentenceId === failedSentence.sentenceId);
+               if (failedIndex !== -1) {
+                 setCurrentIndex(failedIndex);
+                 setHasRecorded(false);
+                 setStep('recording');
+               }
+            }
+          }
+        }
+      } catch (e: any) {
+        // Just log or silently retry, but if it's auth error we should stop
+        if (e.message && (e.message.includes('401') || e.message.includes('403'))) {
+          if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+          alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+        }
+      }
+    }, 2500);
+  };
 
-    // Senior celebration effect
-    confetti({
-      particleCount: 70,
-      spread: 60,
-      origin: { y: 0.6 },
-    });
+  // 6. Fetch results
+  const fetchResults = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token || !sessionId) return;
+
+    try {
+      const results: DiagnosisRecordingResult[] = [];
+      // Fetch result for each sentence
+      for (const s of sentences) {
+        const recId = recordingIds[s.sentenceId];
+        if (!recId) continue;
+        const res = await getRecordingResultApi(token, sessionId, recId);
+        if (res.success && res.data) {
+           results.push(res.data);
+        }
+      }
+      setActualResults(results);
+      setStep('result');
+
+      // Celebration effect
+      confetti({
+        particleCount: 70,
+        spread: 60,
+        origin: { y: 0.6 },
+      });
+    } catch (e) {
+      alert('결과를 불러오는 중 오류가 발생했습니다.');
+    }
   };
 
   // Format seconds to mm:ss
@@ -188,11 +255,50 @@ export const DiagnosisPage: React.FC = () => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  const renderDiffHighlight = (answerText: string, diffHighlights: DiffHighlight[]) => {
+    if (!diffHighlights || diffHighlights.length === 0) return <span>{answerText}</span>;
+  
+    const elements = [];
+    let currentPos = 0;
+    
+    // Sort by position to process sequentially
+    const sortedDiffs = [...diffHighlights].sort((a, b) => a.position - b.position);
+  
+    for (const diff of sortedDiffs) {
+      // Add text before the diff
+      if (diff.position > currentPos) {
+        elements.push(<span key={`text-${currentPos}`}>{answerText.slice(currentPos, diff.position)}</span>);
+      }
+      
+      if (diff.expected && diff.recognized) {
+        // Case A: substitution
+        elements.push(<span key={`diff-${diff.position}`} style={{ color: 'var(--color-danger)', fontWeight: 'bold', textDecoration: 'underline' }}>{answerText[diff.position]}</span>);
+        currentPos = diff.position + 1;
+      } else if (diff.expected && !diff.recognized) {
+        // Case B: omission
+        elements.push(<span key={`diff-${diff.position}`} style={{ color: 'var(--color-muted)', textDecoration: 'line-through' }}>{answerText[diff.position]}</span>);
+        currentPos = diff.position + 1;
+      } else if (!diff.expected && diff.recognized) {
+        // Case C: addition
+        elements.push(<span key={`diff-${diff.position}`} style={{ color: 'var(--color-accent)', fontWeight: 'bold' }}>[{diff.recognized}]</span>);
+        currentPos = diff.position; // don't advance answerText index because expected is null
+      }
+    }
+  
+    // Add remaining text
+    if (currentPos < answerText.length) {
+      elements.push(<span key={`text-${currentPos}`}>{answerText.slice(currentPos)}</span>);
+    }
+  
+    return <>{elements}</>;
+  };
+
   // STAGE 1: INTRO / GUIDE
   if (step === 'intro') {
     return (
-      <div style={{ maxWidth: '800px', margin: '30px auto', padding: '0 16px' }}>
-        <div
+      <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '800px', margin: '30px auto', padding: '0 16px' }}>
+        <FeaturePageHeader eyebrow="PRONUNCIATION / SPEECH CARE" title={<>내 발음을,<br /><span>조금 더 이해하기 쉽게.</span></>} description="짧은 문장을 읽으면 발음 상태와 개선점을 확인할 수 있습니다." />
+        <div className="responsive-panel vb-function-stage vb-diagnosis-intro"
           style={{
             backgroundColor: 'var(--color-bg-surface)',
             padding: '36px 32px',
@@ -218,15 +324,14 @@ export const DiagnosisPage: React.FC = () => {
               <Mic size={40} />
             </div>
             <h1 style={{ fontSize: 'var(--text-3xl)', marginBottom: '12px' }}>
-              발음 진단을 시작해볼까요?
+              발음 분석을 시작해볼까요?
             </h1>
             <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-text-muted)' }}>
-              5개의 짧은 문장을 편안하게 읽으시면, AI가 발음 상태와 개선점을 분석해 드립니다.
+              짧은 문장을 편안하게 읽으시면, AI가 발음 상태를 분석해 드립니다.
             </p>
           </div>
 
-          {/* Senior Guidance Checklist */}
-          <div
+          <div className="responsive-panel"
             style={{
               backgroundColor: 'var(--color-bg-subtle)',
               border: '2px solid var(--color-border)',
@@ -277,12 +382,12 @@ export const DiagnosisPage: React.FC = () => {
 
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <TTSButton
-              text="발음 진단을 시작합니다. 조용한 곳에서 화면에 나오는 문장을 천천히 또박또박 읽어주세요."
+              text="발음 분석을 시작합니다. 조용한 곳에서 화면에 나오는 문장을 천천히 또박또박 읽어주세요."
               label="안내 음성 듣기"
               size="large"
             />
             <SeniorButton variant="primary" size="large" onClick={handleStartDiagnosis}>
-              진단 시작하기
+              분석 시작하기
             </SeniorButton>
           </div>
         </div>
@@ -290,13 +395,15 @@ export const DiagnosisPage: React.FC = () => {
     );
   }
 
-  if (step === 'recording') {
+  // STAGE 2: RECORDING
+  if (step === 'recording' && currentSentence) {
     const totalSentences = sentences.length || 1;
     const progressPercent = Math.round(((currentIndex + 1) / totalSentences) * 100);
 
     return (
-      <div style={{ maxWidth: '840px', margin: '30px auto', padding: '0 16px' }}>
-        {/* Step Indicator Header */}
+      <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '840px', margin: '30px auto', padding: '0 16px' }}>
+        <FeaturePageHeader eyebrow="PRONUNCIATION / RECORDING" title={<>현재 문장을,<br /><span>편안하게 읽어주세요.</span></>} description="평소 속도로 천천히 읽고, 문장을 마치면 녹음을 완료해주세요." meta={`${String(currentIndex + 1).padStart(2, '0')} / ${String(sentences.length || 1).padStart(2, '0')}`} />
+        
         <div
           style={{
             display: 'flex',
@@ -305,7 +412,7 @@ export const DiagnosisPage: React.FC = () => {
             marginBottom: '16px',
           }}
         >
-          <button
+          <button className="touch-control"
             onClick={() => setStep('intro')}
             style={{
               fontSize: 'var(--text-base)',
@@ -330,7 +437,6 @@ export const DiagnosisPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Progress Bar */}
         <div
           style={{
             height: '10px',
@@ -350,8 +456,7 @@ export const DiagnosisPage: React.FC = () => {
           />
         </div>
 
-        {/* Main Sentence Card */}
-        <div
+        <div className="responsive-panel vb-function-stage vb-diagnosis-recording"
           style={{
             backgroundColor: 'var(--color-bg-surface)',
             padding: '36px 30px',
@@ -366,7 +471,6 @@ export const DiagnosisPage: React.FC = () => {
             다음 문장을 소리 내어 또박또박 읽어주세요
           </p>
 
-          {/* Big Typography Sentence */}
           <div
             style={{
               fontSize: 'var(--text-3xl)',
@@ -387,21 +491,20 @@ export const DiagnosisPage: React.FC = () => {
             <TTSButton text={currentSentence.text} label="문장 소리 듣기" size="large" />
           </div>
 
-          {/* Recording Feedback Area */}
           <div style={{ marginBottom: '28px' }}>
             <AudioVisualizer isRecording={isRecording} height={70} />
             <div style={{ marginTop: '12px', fontSize: 'var(--text-lg)', fontWeight: 700 }}>
               {isRecording ? (
                 <span style={{ color: 'var(--color-danger)' }}>
-                  🔴 녹음 중... ({formatTime(recordedTime)})
+                  녹음 중... ({formatTime(recordedTime)})
                 </span>
               ) : uploading ? (
                 <span style={{ color: 'var(--color-primary)' }}>
-                  ⏳ 업로드 중...
+                  업로드 중...
                 </span>
               ) : hasRecorded ? (
                 <span style={{ color: 'var(--color-secondary)' }}>
-                  ✅ 녹음 완료 ({formatTime(recordedTime)})
+                  녹음 완료 ({formatTime(recordedTime)})
                 </span>
               ) : (
                 <span style={{ color: 'var(--color-text-muted)' }}>
@@ -411,7 +514,6 @@ export const DiagnosisPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
             {!isRecording ? (
               <SeniorButton
@@ -453,8 +555,9 @@ export const DiagnosisPage: React.FC = () => {
   // STAGE 3: ANALYZING
   if (step === 'analyzing') {
     return (
-      <div style={{ maxWidth: '600px', margin: '60px auto', textAlign: 'center', padding: '0 16px' }}>
-        <div
+      <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '600px', margin: '60px auto', textAlign: 'center', padding: '0 16px' }}>
+        <FeaturePageHeader eyebrow="PRONUNCIATION / ANALYSIS" title={<>AI가 발음을,<br /><span>분석하고 있어요.</span></>} description="발음 상태를 확인하는 동안 잠시만 기다려주세요." />
+        <div className="responsive-panel vb-function-stage vb-analysis-stage"
           style={{
             backgroundColor: 'var(--color-bg-surface)',
             padding: '48px 32px',
@@ -475,11 +578,9 @@ export const DiagnosisPage: React.FC = () => {
             }}
           />
           <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '12px' }}>
-            음성을 정밀 분석하고 있어요...
+            음성을 분석하고 있어요...
           </h2>
           <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
-            발음 정확도, 음절 연결 유창도, 음소별 명료도를 꼼꼼히 계산 중입니다.
-            <br />
             잠시만 기다려주세요!
           </p>
         </div>
@@ -488,219 +589,94 @@ export const DiagnosisPage: React.FC = () => {
   }
 
   // STAGE 4: RESULT REPORT
-  const res = currentResult;
-  if (!res) return null;
-
-  return (
-    <div style={{ maxWidth: '960px', margin: '30px auto', padding: '0 16px 60px' }}>
-      {/* Result Top Card */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '36px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '2px solid var(--color-border)',
-          boxShadow: 'var(--shadow-md)',
-          marginBottom: '28px',
-        }}
-      >
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 16px',
-              borderRadius: 'var(--border-radius-full)',
-              backgroundColor: 'var(--color-secondary-light)',
-              color: 'var(--color-secondary)',
-              fontWeight: 800,
-              fontSize: 'var(--text-sm)',
-              marginBottom: '12px',
-            }}
-          >
-            <Sparkles size={18} /> 진단 완료
-          </span>
-          <h1 style={{ fontSize: 'var(--text-3xl)', marginBottom: '8px' }}>
-            오늘의 발음 진단 결과
-          </h1>
-          <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-            총 5개 문장의 발화 데이터를 분석한 종합 보고서입니다.
-          </p>
-        </div>
-
-        {/* Score & Breakdown Row */}
-        <div
+  if (step === 'result') {
+    return (
+      <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '960px', margin: '30px auto', padding: '0 16px 60px' }}>
+        <FeaturePageHeader eyebrow="PRONUNCIATION / REPORT" title={<>오늘의 발음,<br /><span>이렇게 들렸습니다.</span></>} description="문장별 발화를 바탕으로 발음의 차이를 확인해보세요." />
+        
+        <div className="responsive-panel vb-diagnosis-report"
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '24px',
-            alignItems: 'center',
-            padding: '24px',
-            backgroundColor: 'var(--color-bg-subtle)',
-            borderRadius: 'var(--border-radius-md)',
-            marginBottom: '32px',
+            backgroundColor: 'var(--color-bg-surface)',
+            padding: '36px',
+            borderRadius: 'var(--border-radius-lg)',
+            border: '2px solid var(--color-border)',
+            boxShadow: 'var(--shadow-md)',
+            marginBottom: '28px',
           }}
         >
-          {/* Main Big Score */}
-          <div style={{ textAlign: 'center' }}>
-            <div
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <span
               style={{
-                width: '140px',
-                height: '140px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--color-primary)',
-                color: '#ffffff',
                 display: 'inline-flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: 'var(--shadow-lg)',
+                gap: '6px',
+                padding: '6px 16px',
+                borderRadius: 'var(--border-radius-full)',
+                backgroundColor: 'var(--color-secondary-light)',
+                color: 'var(--color-secondary)',
+                fontWeight: 800,
+                fontSize: 'var(--text-sm)',
+                marginBottom: '12px',
               }}
             >
-              <span style={{ fontSize: 'var(--text-4xl)', fontWeight: 900, lineHeight: 1 }}>
-                {res.overallScore}
-              </span>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, marginTop: '4px' }}>
-                종합 발음 점수
-              </span>
-            </div>
-            <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-primary)', marginTop: '10px' }}>
-              표준 전달력 수준에 도달했습니다!
+              <Sparkles size={18} /> 분석 완료
+            </span>
+            <h1 style={{ fontSize: 'var(--text-3xl)', marginBottom: '8px' }}>
+              발음 분석 결과
+            </h1>
+            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
+              문장별로 원래 문장과 인식된 발음의 차이를 표시했습니다.
             </p>
           </div>
 
-          {/* Sub Metrics */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: '4px' }}>
-                <span>발음 정확도</span>
-                <span>{res.metrics.accuracy}%</span>
-              </div>
-              <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ width: `${res.metrics.accuracy}%`, height: '100%', backgroundColor: 'var(--color-primary)' }} />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: '4px' }}>
-                <span>말하기 유창도 (호흡 및 멈춤)</span>
-                <span>{res.metrics.fluency}%</span>
-              </div>
-              <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ width: `${res.metrics.fluency}%`, height: '100%', backgroundColor: 'var(--color-secondary)' }} />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'var(--text-sm)', fontWeight: 700, marginBottom: '4px' }}>
-                <span>소리 명료도 (음량 및 명료성)</span>
-                <span>{res.metrics.clarity}%</span>
-              </div>
-              <div style={{ height: '10px', backgroundColor: 'var(--color-border)', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ width: `${res.metrics.clarity}%`, height: '100%', backgroundColor: '#0284c7' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Weak Phonemes Section (취약 음소 확인) */}
-        <div style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: 'var(--text-xl)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertTriangle size={22} color="var(--color-accent)" />
-            <span>집중 관리가 필요한 취약 음소 ({res.weakPhonemes.length}개)</span>
-          </h2>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: '16px',
-            }}
-          >
-            {res.weakPhonemes.map((wp) => (
-              <div
-                key={wp.phoneme}
-                style={{
-                  padding: '20px',
-                  backgroundColor: 'var(--color-bg-surface)',
-                  border: '2px solid var(--color-accent-border)',
-                  borderRadius: 'var(--border-radius-md)',
-                  boxShadow: 'var(--shadow-sm)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span
-                    style={{
-                      fontSize: 'var(--text-3xl)',
-                      fontWeight: 900,
-                      color: 'var(--color-accent)',
-                    }}
-                  >
-                    '{wp.phoneme}'
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      fontWeight: 700,
-                      backgroundColor: 'var(--color-accent-light)',
-                      color: 'var(--color-accent)',
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                    }}
-                  >
-                    정확도 {wp.accuracy}%
-                  </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
+            {actualResults.map((res, idx) => (
+              <div key={idx} style={{ padding: '24px', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--border-radius-md)', border: '1px solid var(--color-border)' }}>
+                <div style={{ marginBottom: '16px', borderBottom: '1px solid var(--color-border)', paddingBottom: '16px' }}>
+                  <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '8px', fontWeight: 600 }}>원래 문장</h3>
+                  <p style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--color-text-title)' }}>
+                    {renderDiffHighlight(res.answerText, res.diffHighlights)}
+                  </p>
                 </div>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-body)', lineHeight: 1.6 }}>
-                  {wp.description}
-                </p>
+                <div>
+                  <h3 style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '8px', fontWeight: 600 }}>인식된 발음</h3>
+                  {res.recognizedText === "" || res.recognizedText === null ? (
+                    <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-danger)', fontWeight: 600 }}>
+                      목소리가 잘 들리지 않았어요. 다시 녹음해 주세요.
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-text-body)' }}>
+                      {res.recognizedText}
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </div>
 
-        {/* Specialist AI Comment */}
-        <div
-          style={{
-            padding: '20px 24px',
-            backgroundColor: 'var(--color-primary-light)',
-            border: '2px solid var(--color-primary-border)',
-            borderRadius: 'var(--border-radius-md)',
-            marginBottom: '32px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <strong style={{ fontSize: 'var(--text-base)', color: 'var(--color-primary)' }}>
-              🧑‍⚕️ 언어치료 AI 분석 코멘트
-            </strong>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <SeniorButton
+              variant="outline"
+              size="large"
+              icon={<RotateCcw size={22} />}
+              onClick={() => setStep('intro')}
+            >
+              다시 진단하기
+            </SeniorButton>
+
+            <SeniorButton
+              variant="primary"
+              size="large"
+              icon={<ArrowRight size={22} />}
+              onClick={() => setCurrentTab('dashboard')}
+            >
+              홈으로 가기
+            </SeniorButton>
           </div>
-          <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-body)', lineHeight: 1.7 }}>
-            {res.comment}
-          </p>
-        </div>
-
-        {/* CTA Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <SeniorButton
-            variant="outline"
-            size="large"
-            icon={<RotateCcw size={22} />}
-            onClick={() => setStep('intro')}
-          >
-            다시 진단하기
-          </SeniorButton>
-
-          <SeniorButton
-            variant="primary"
-            size="large"
-            icon={<ArrowRight size={22} />}
-            onClick={() => setCurrentTab('practice')}
-          >
-            추천 맞춤 문장 연습하러 가기
-          </SeniorButton>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 };

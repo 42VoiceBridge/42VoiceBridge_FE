@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import {
-  BookOpen,
   Mic,
   Square,
   X,
-  Sparkles,
 } from 'lucide-react';
 
 import { useApp } from '../../context/AppContext';
@@ -12,9 +10,10 @@ import type { PracticeSentence } from '../../types';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { TTSButton } from '../../components/common/TTSButton';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
+import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
 export const PracticePage: React.FC = () => {
-  const { practiceList, setCurrentTab } = useApp();
+  const { practiceList } = useApp();
   const [selectedPhoneme, setSelectedPhoneme] = useState<string>('all');
   const [activeSentence, setActiveSentence] = useState<PracticeSentence | null>(null);
 
@@ -61,45 +60,10 @@ export const PracticePage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      {/* Header Banner */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '28px 32px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '2px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-          marginBottom: '28px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <BookOpen size={30} color="var(--color-secondary)" />
-            <h1 style={{ fontSize: 'var(--text-3xl)' }}>추천 문장 연습</h1>
-          </div>
-          <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-            나의 취약 음소(ㄹ, ㅅ, ㅈ)를 극복하기 위한 맞춤 발음 연습 문장입니다.
-          </p>
-        </div>
-
-        <SeniorButton
-          variant="outline"
-          size="normal"
-          icon={<Sparkles size={20} />}
-          onClick={() => setCurrentTab('personalization')}
-        >
-          개인화 학습 현황 보기
-        </SeniorButton>
-      </div>
-
+    <div className="vb-theme vb-page vb-page--practice responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
+      <FeaturePageHeader eyebrow="PRACTICE / SPEECH CARE" title={<>문장을 천천히,<br /><span>나의 목소리로.</span></>} description="취약 음소에 맞춘 문장을 듣고, 읽고, 반복해서 연습합니다." />
       {/* Filter Tabs */}
-      <div
+      <div className="vb-filter-tabs"
         style={{
           display: 'flex',
           gap: '10px',
@@ -109,7 +73,7 @@ export const PracticePage: React.FC = () => {
         }}
       >
         {categories.map((cat) => (
-          <button
+          <button className="touch-control"
             key={cat.id}
             onClick={() => setSelectedPhoneme(cat.id)}
             style={{
@@ -136,9 +100,9 @@ export const PracticePage: React.FC = () => {
       </div>
 
       {/* Sentences Grid List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="vb-practice-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {filteredList.map((sentence) => (
-          <div
+          <article className="responsive-panel vb-practice-row"
             key={sentence.id}
             style={{
               backgroundColor: 'var(--color-bg-surface)',
@@ -153,7 +117,7 @@ export const PracticePage: React.FC = () => {
               gap: '20px',
             }}
           >
-            <div style={{ flex: 1, minWidth: '260px' }}>
+            <div className="practice-copy" style={{ flex: 1, minWidth: '260px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                 <span
                   style={{
@@ -220,13 +184,16 @@ export const PracticePage: React.FC = () => {
                 연습하기
               </SeniorButton>
             </div>
-          </div>
+          </article>
         ))}
       </div>
 
       {/* PRACTICE MODAL */}
       {activeSentence && (
-        <div
+        <div className="practice-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="practice-dialog-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -238,7 +205,7 @@ export const PracticePage: React.FC = () => {
             padding: '20px',
           }}
         >
-          <div
+          <div className="responsive-panel practice-dialog vb-practice-dialog"
             style={{
               backgroundColor: 'var(--color-bg-surface)',
               width: '100%',
@@ -251,7 +218,7 @@ export const PracticePage: React.FC = () => {
             }}
           >
             {/* Close Button */}
-            <button
+            <button className="touch-control"
               onClick={closePracticeModal}
               style={{
                 position: 'absolute',
@@ -281,7 +248,7 @@ export const PracticePage: React.FC = () => {
               {activeSentence.category}
             </span>
 
-            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
+            <p id="practice-dialog-title" style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
               문장을 또박또박 발음해보세요.
             </p>
 
@@ -326,8 +293,8 @@ export const PracticePage: React.FC = () => {
                 </div>
                 <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                   {practiceScore >= 85
-                    ? '🎉 아주 훌륭합니다! 또렷하게 전달되고 있어요.'
-                    : '👍 좋아요! 음절 끝을 조금만 더 힘있게 맺어보세요.'}
+                    ? '아주 훌륭합니다! 또렷하게 전달되고 있어요.'
+                    : '좋아요! 음절 끝을 조금만 더 힘있게 맺어보세요.'}
                 </p>
               </div>
             )}

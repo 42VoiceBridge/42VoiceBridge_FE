@@ -7,13 +7,12 @@ import {
   Check,
   Maximize2,
   X,
-  MessageSquare,
-  Sparkles,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { speakText } from '../../utils/audioUtils';
+import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
 export const VoiceAssistPage: React.FC = () => {
   const { assistMessages } = useApp();
@@ -42,40 +41,10 @@ export const VoiceAssistPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      {/* Top Banner */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '28px 32px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '2px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-          marginBottom: '28px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <div
-            style={{
-              padding: '10px',
-              borderRadius: '12px',
-              backgroundColor: 'var(--color-secondary-light)',
-              color: 'var(--color-secondary)',
-            }}
-          >
-            <MessageSquare size={32} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 'var(--text-3xl)' }}>실사용 음성 인식 대화 보조</h1>
-            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-              발음이 뭉개지거나 힘이 들더라도 AI가 문맥을 파악해 또렷한 문장과 소리로 대신 전합니다.
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="vb-theme vb-page vb-page--assist responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
+      <FeaturePageHeader eyebrow="VOICE ASSIST / COMMUNICATION" title={<>당신의 말을,<br /><span>더 선명하게.</span></>} description="당신의 목소리를 듣고, 이해하기 쉬운 문장과 음성으로 전달합니다." />
       {/* Main Microphone Interaction Box */}
-      <div
+      <div className="responsive-panel vb-function-stage vb-microphone-stage"
         style={{
           backgroundColor: 'var(--color-bg-surface)',
           padding: '36px 30px',
@@ -124,15 +93,15 @@ export const VoiceAssistPage: React.FC = () => {
       </div>
 
       {/* Conversation Feed */}
-      <div>
+      <div className="vb-page-section vb-conversation-section">
         <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Sparkles size={24} color="var(--color-secondary)" />
+          <span>RECENT CONVERSATIONS</span>
           <span>실시간 대화 변환 내역</span>
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {assistMessages.map((msg) => (
-            <div
+            <article className="responsive-panel vb-conversation-row"
               key={msg.id}
               style={{
                 backgroundColor: 'var(--color-bg-surface)',
@@ -225,14 +194,17 @@ export const VoiceAssistPage: React.FC = () => {
                   {copiedId === msg.id ? '복사됨!' : '글자 복사'}
                 </SeniorButton>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       </div>
 
       {/* FULLSCREEN / BIG TEXT MODAL FOR SENIORS & PARTNERS */}
       {bigViewText && (
-        <div
+        <div className="responsive-panel speech-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="대화 문장 크게 보기"
           style={{
             position: 'fixed',
             inset: 0,
@@ -269,7 +241,7 @@ export const VoiceAssistPage: React.FC = () => {
             <p style={{ fontSize: 'var(--text-lg)', color: '#94a3b8', marginBottom: '24px' }}>
               대화 상대방에게 이 화면을 보여주세요
             </p>
-            <div
+            <div className="speech-text"
               style={{
                 fontSize: 'clamp(2rem, 5vw, 3.8rem)',
                 fontWeight: 900,

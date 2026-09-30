@@ -1,0 +1,280 @@
+/* Layout-only overrides. Desktop inline styles remain the default. */
+.responsive-page,
+.responsive-panel,
+.practice-dialog {
+  overflow-wrap: anywhere;
+}
+
+/* Constrain overlays independently of viewport width and content length. */
+.practice-overlay,
+.speech-overlay {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.practice-dialog {
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.speech-overlay > * {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.speech-text {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .responsive-page,
+  .responsive-panel,
+  .responsive-grid > *,
+  .header-top > *,
+  .header-tools > * {
+    min-width: 0;
+  }
+
+  .responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important;
+  }
+
+  .senior-btn,
+  .tts-button,
+  .touch-control,
+  .header-accessibility button {
+    max-width: 100%;
+    min-height: 44px;
+  }
+
+  .senior-btn > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .touch-control[aria-label] {
+    min-width: 44px;
+  }
+
+  .settings-options {
+    flex-wrap: wrap;
+  }
+
+  .settings-page input[type='checkbox'] {
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px;
+    padding: 0;
+    margin-left: 12px;
+    flex-shrink: 0;
+  }
+
+  .history-chart {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    height: 252px !important;
+    padding-top: 48px !important;
+  }
+
+  .header-top {
+    gap: 10px !important;
+    padding: 12px 16px !important;
+  }
+
+  .header-tools {
+    gap: 8px !important;
+  }
+
+  .header-accessibility {
+    gap: 6px !important;
+    padding: 4px 8px !important;
+    border-radius: 16px !important;
+    max-width: 100%;
+  }
+
+  .header-accessibility > div:first-child {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .header-accessibility > div:first-child > div {
+    flex-wrap: wrap;
+  }
+
+  .header-accessibility button {
+    padding: 8px 10px !important;
+  }
+
+  .header-nav {
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: 12px;
+  }
+
+  .header-nav button {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  .header-nav {
+    scroll-snap-type: x proximity;
+  }
+
+  .practice-copy {
+    min-width: 0 !important;
+    flex-basis: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-page {
+    margin: 20px 12px !important;
+  }
+
+  .responsive-page {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    margin-top: 20px !important;
+  }
+
+  .responsive-panel {
+    padding: 20px 16px !important;
+  }
+
+  .responsive-panel .responsive-panel {
+    padding: 16px 12px !important;
+  }
+
+  .responsive-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  .responsive-page h1,
+  .mobile-title {
+    font-size: var(--text-2xl) !important;
+  }
+
+  .senior-btn {
+    padding: 12px 16px !important;
+    gap: 8px !important;
+  }
+
+  .dashboard-record-button {
+    font-size: var(--text-xl) !important;
+    width: 100% !important;
+  }
+
+  .dashboard-hero {
+    gap: 16px !important;
+  }
+
+  .header-top {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  .header-brand {
+    gap: 8px !important;
+  }
+
+  .header-brand > div:last-child > div {
+    flex-wrap: wrap;
+    gap: 4px !important;
+  }
+
+  .header-brand p {
+    display: none;
+  }
+
+  .header-tools {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .header-accessibility {
+    width: 100%;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    gap: 4px !important;
+  }
+
+  .header-accessibility > div:first-child > svg,
+  .header-accessibility > div:first-child > span,
+  .header-accessibility > div:nth-child(2) {
+    display: none;
+  }
+
+  .header-accessibility button {
+    padding: 8px !important;
+  }
+
+  .header-user {
+    width: 100%;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  .header-user > div {
+    min-width: 0;
+    padding: 4px 8px !important;
+    overflow-wrap: anywhere;
+  }
+
+  .header-user > button {
+    flex-shrink: 0;
+  }
+
+  .header-nav > div {
+    padding: 4px 12px !important;
+    gap: 4px !important;
+  }
+
+  .header-nav button {
+    padding: 10px 12px !important;
+  }
+
+  .history-chart {
+    justify-content: flex-start !important;
+    gap: 12px;
+  }
+
+  .history-bar {
+    flex-shrink: 0;
+  }
+
+  .history-summary {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 12px;
+  }
+
+  .history-summary > div:last-child {
+    justify-content: flex-end;
+    white-space: nowrap;
+  }
+
+  .diagnosis-metric {
+    gap: 8px;
+  }
+
+  .diagnosis-metric > span:last-child {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .practice-overlay {
+    padding: 12px !important;
+  }
+
+  .practice-dialog {
+    max-height: calc(100dvh - 24px);
+    padding: 60px 16px 20px !important;
+  }
+
+  .speech-overlay {
+    padding: 20px 16px !important;
+    gap: 24px;
+  }
+}

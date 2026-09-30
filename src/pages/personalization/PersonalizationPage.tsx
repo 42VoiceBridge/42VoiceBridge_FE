@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Cpu,
-  PlusCircle,
-  TrendingUp,
-  RefreshCw,
-  Award,
-} from 'lucide-react';
+import { PlusCircle, RefreshCw, Award } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import type { PersonalizationModelResponse } from '../../api/personalization';
 import { getPersonalizationModelApi } from '../../api/personalization';
+import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
 export const PersonalizationPage: React.FC = () => {
   const { user } = useApp();
@@ -52,38 +47,8 @@ export const PersonalizationPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      {/* Top Banner */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '28px 32px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '2px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-          marginBottom: '28px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-          <div
-            style={{
-              padding: '10px',
-              borderRadius: '12px',
-              backgroundColor: 'var(--color-primary-light)',
-              color: 'var(--color-primary)',
-            }}
-          >
-            <Cpu size={32} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: 'var(--text-3xl)' }}>AI 개인화 모델 학습</h1>
-            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-              {user?.name || '사용자'}님의 고유한 발성 패턴을 학습하여 인식 정확도를 비약적으로 높입니다.
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <div className="vb-theme vb-page vb-page--personalization responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
+      <FeaturePageHeader eyebrow="PERSONALIZATION / YOUR AI" title={<>YOUR VOICE,<br /><span>YOUR AI.</span></>} description={`${user?.name || '사용자'}님의 발화 패턴을 학습해, 사용할수록 목소리를 더 잘 이해합니다.`} />
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           데이터를 불러오는 중입니다...
@@ -95,7 +60,7 @@ export const PersonalizationPage: React.FC = () => {
       ) : model && (
         <>
           {/* 2-Column Dashboard Cards */}
-          <div
+          <div className="responsive-grid vb-data-columns"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -104,7 +69,7 @@ export const PersonalizationPage: React.FC = () => {
             }}
           >
             {/* Card 1: Data Collection Status */}
-            <div
+            <section className="responsive-panel vb-data-block"
               style={{
                 backgroundColor: 'var(--color-bg-surface)',
                 padding: '30px',
@@ -139,7 +104,7 @@ export const PersonalizationPage: React.FC = () => {
                 </div>
 
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  💡 충분한 녹음 데이터가 모이면 전용 모델의 인식 정확도가 최적화됩니다.
+                  충분한 녹음 데이터가 모이면 전용 모델의 인식 정확도가 최적화됩니다.
                 </p>
               </div>
 
@@ -155,10 +120,10 @@ export const PersonalizationPage: React.FC = () => {
                   샘플 수집 기능 준비 중
                 </SeniorButton>
               </div>
-            </div>
+            </section>
 
             {/* Card 2: AI Model Status */}
-            <div
+            <section className="responsive-panel vb-data-block"
               style={{
                 backgroundColor: 'var(--color-bg-surface)',
                 padding: '30px',
@@ -230,11 +195,11 @@ export const PersonalizationPage: React.FC = () => {
                   학습 기능 준비 중
                 </SeniorButton>
               </div>
-            </div>
+            </section>
           </div>
 
           {/* Accuracy Comparison Banner */}
-          <div
+          <section className="responsive-panel vb-data-feature"
             style={{
               backgroundColor: 'var(--color-bg-surface)',
               padding: '32px',
@@ -244,7 +209,6 @@ export const PersonalizationPage: React.FC = () => {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <TrendingUp size={26} color="var(--color-secondary)" />
               <h2 style={{ fontSize: 'var(--text-2xl)' }}>
                 개인 맞춤 모델 적용 효과 비교
               </h2>
@@ -254,7 +218,7 @@ export const PersonalizationPage: React.FC = () => {
               구음장애 환자의 특수 조음 발음 시, 일반 범용 AI 모델 대비 개인화 모델의 인식 성공률 차이입니다.
             </p>
 
-            <div
+            <div className="responsive-panel"
               style={{
                 padding: '30px',
                 backgroundColor: 'var(--color-bg-subtle)',
@@ -267,7 +231,7 @@ export const PersonalizationPage: React.FC = () => {
                 개인화 모델 성능 비교 데이터는 아직 제공되지 않습니다.
               </p>
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>

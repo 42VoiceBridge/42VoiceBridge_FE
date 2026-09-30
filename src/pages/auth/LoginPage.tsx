@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, LogIn, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { SeniorButton } from '../../components/common/SeniorButton';
 
 export const LoginPage: React.FC = () => {
   const { login, setCurrentTab } = useApp();
@@ -31,156 +30,152 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: '520px',
-        margin: '40px auto',
-        padding: '36px 28px',
-        backgroundColor: 'var(--color-bg-surface)',
-        borderRadius: 'var(--border-radius-lg)',
-        border: '2px solid var(--color-border)',
-        boxShadow: 'var(--shadow-md)',
-      }}
-    >
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <div
-          style={{
-            display: 'inline-flex',
-            padding: '12px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--color-primary-light)',
-            color: 'var(--color-primary)',
-            marginBottom: '16px',
-          }}
-        >
-          <LogIn size={36} />
-        </div>
-        <h1 style={{ fontSize: 'var(--text-2xl)', color: 'var(--color-text-title)', marginBottom: '8px' }}>
-          AI 구음장애 보조 서비스
-        </h1>
-        <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-          더 명확하고 편안한 발음을 위해 로그인해주세요.
-        </p>
-      </div>
-
-      {/* Quick Demo Login Banner for easy testing & senior convenience */}
-      <div
-        style={{
-          backgroundColor: 'var(--color-secondary-light)',
-          border: '2px dashed var(--color-secondary-border)',
-          borderRadius: 'var(--border-radius-md)',
-          padding: '16px',
-          marginBottom: '28px',
-          textAlign: 'center',
-        }}
-      >
-        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-secondary)', marginBottom: '10px' }}>
-          💡 복잡한 입력 없이 즉시 체험해보세요!
-        </p>
-        <SeniorButton
-          variant="secondary"
-          size="normal"
-          fullWidth
-          icon={<Sparkles size={20} />}
-          onClick={handleDemoLogin}
-        >
-          홍길동님(체험 계정)으로 바로 시작
-        </SeniorButton>
-      </div>
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div>
-          <label
-            htmlFor="login-email"
-            style={{
-              display: 'block',
-              fontSize: 'var(--text-base)',
-              fontWeight: 700,
-              marginBottom: '8px',
-              color: 'var(--color-text-title)',
-            }}
-          >
-            아이디 (이메일)
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="이메일을 입력해주세요"
-            required
-          />
+    <div className="vb-theme vb-page" style={{ minHeight: 'calc(100vh - 96px)', display: 'flex', alignItems: 'center' }}>
+      <div className="vb-editorial-grid" style={{ width: '100%', paddingBlock: '8vh 12vh' }}>
+        {/* Left Branding Column */}
+        <div className="vb-auth-visual" style={{ paddingBottom: '40px' }}>
+          <p className="vb-eyebrow" style={{ color: 'var(--vb-green)', marginBottom: '24px' }}>VOICEBRIDGE / LOGIN</p>
+          <div className="vb-display" style={{ fontSize: 'calc(clamp(56px, 8vw, 112px) * var(--vb-display-scale))', marginBottom: '40px' }}>
+            <span>EVERY VOICE</span>
+            <span>DESERVES TO</span>
+            <span>BE HEARD<span className="vb-title-dot">.</span></span>
+          </div>
+          
+          <div className="vb-slider-art" aria-hidden="true" style={{ marginTop: 'clamp(40px, 8vw, 80px)' }}>
+             <svg className="vb-graphic" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+               <path d="M0 60 Q 100 0, 200 60 T 400 60" stroke="var(--vb-line)" strokeWidth="2" fill="none" />
+               <path d="M0 60 Q 100 120, 200 60 T 400 60" stroke="var(--vb-green)" strokeWidth="3" fill="none" />
+               <circle cx="200" cy="60" r="8" fill="var(--vb-green)" />
+               <circle cx="100" cy="30" r="4" fill="var(--vb-line)" />
+               <circle cx="300" cy="90" r="4" fill="var(--vb-line)" />
+             </svg>
+          </div>
         </div>
 
-        <div>
-          <label
-            htmlFor="login-password"
-            style={{
-              display: 'block',
-              fontSize: 'var(--text-base)',
-              fontWeight: 700,
-              marginBottom: '8px',
-              color: 'var(--color-text-title)',
-            }}
-          >
-            비밀번호
-          </label>
-          <div style={{ position: 'relative' }}>
-            <input
-              id="login-password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호를 입력해주세요"
-              required
-              style={{ paddingRight: '56px' }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute',
-                right: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: 'var(--color-text-muted)',
-                padding: '8px',
-              }}
-              aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
-            >
-              {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+        {/* Right Form Column */}
+        <div className="vb-auth-form" style={{ maxWidth: '440px', margin: '0 auto', width: '100%' }}>
+          <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 500, marginBottom: '48px', letterSpacing: '-0.05em' }}>
+            다시 만나서 반가워요.
+          </h1>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+            <div>
+              <label htmlFor="login-email" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
+                EMAIL
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="이메일 주소"
+                required
+                autoComplete="email"
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid var(--vb-line)',
+                  padding: '8px 0 16px',
+                  fontSize: 'var(--text-lg)',
+                  color: 'var(--vb-ink)',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                  borderRadius: '0'
+                }}
+                onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
+                onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="login-password" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
+                PASSWORD
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="비밀번호"
+                  required
+                  autoComplete="current-password"
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid var(--vb-line)',
+                    padding: '8px 48px 16px 0',
+                    fontSize: 'var(--text-lg)',
+                    color: 'var(--vb-ink)',
+                    outline: 'none',
+                    transition: 'border-color 0.2s ease',
+                    borderRadius: '0'
+                  }}
+                  onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
+                  onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '0',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--vb-muted)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '8px',
+                  }}
+                  aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
+                >
+                  {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                </button>
+              </div>
+            </div>
+
+            {errorMsg && (
+              <div style={{ color: '#d32f2f', fontSize: 'var(--text-sm)', fontWeight: 500, marginTop: '-12px' }}>
+                {errorMsg}
+              </div>
+            )}
+
+            <button className="vb-button" type="submit" disabled={isLoading} style={{ marginTop: '8px', width: '100%', justifyContent: 'center' }}>
+              {isLoading ? '로그인 중...' : '로그인'}
+              {!isLoading && <ArrowRight size={20} />}
             </button>
+          </form>
+
+          <div style={{ marginTop: '56px', paddingTop: '36px', borderTop: '1px solid var(--vb-line)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: 'var(--text-base)' }}>
+              <span className="vb-muted">처음이신가요?</span>
+              <button 
+                type="button" 
+                className="vb-text-link" 
+                onClick={() => setCurrentTab('register')}
+                style={{ minHeight: 'auto', padding: 0 }}
+              >
+                회원가입<ArrowRight size={18} />
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: 'var(--text-base)' }}>
+              <span className="vb-muted">테스트 계정으로</span>
+              <button 
+                type="button" 
+                className="vb-text-link" 
+                onClick={handleDemoLogin}
+                style={{ minHeight: 'auto', padding: 0 }}
+              >
+                체험하기<Sparkles size={18} />
+              </button>
+            </div>
           </div>
         </div>
-
-        {errorMsg && (
-          <div style={{ color: 'var(--color-danger)', fontSize: 'var(--text-sm)', fontWeight: 700, textAlign: 'center', marginTop: '-8px' }}>
-            {errorMsg}
-          </div>
-        )}
-
-        <SeniorButton type="submit" variant="primary" size="large" fullWidth style={{ marginTop: '8px' }} disabled={isLoading}>
-          {isLoading ? '로그인 중...' : '로그인'}
-        </SeniorButton>
-
-        <div style={{ textAlign: 'center', marginTop: '16px' }}>
-          <span style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginRight: '8px' }}>
-            아직 회원이 아니신가요?
-          </span>
-          <button
-            type="button"
-            onClick={() => setCurrentTab('register')}
-            style={{
-              fontSize: 'var(--text-base)',
-              fontWeight: 800,
-              color: 'var(--color-primary)',
-              textDecoration: 'underline',
-            }}
-          >
-            회원가입하기
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 };

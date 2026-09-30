@@ -1,211 +1,85 @@
-import React from 'react';
-import { Activity, User as UserIcon, LogOut, LogIn } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowUpRight, LogIn, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { NavTab } from '../../context/AppContext';
 import { AccessibilityBar } from '../common/AccessibilityBar';
+import { BrandDialog } from '../common/BrandDialog';
 
-export const AppHeader: React.FC = () => {
+const navItems: { id: NavTab; label: string; english: string }[] = [
+  { id: 'dashboard', label: '홈', english: 'Home' },
+  { id: 'assist', label: '실시간 대화', english: 'Voice Assist' },
+  { id: 'personalization', label: 'AI 학습', english: 'Your AI' },
+  { id: 'diagnosis', label: '발음 분석', english: 'Speech' },
+  { id: 'history', label: '기록', english: 'History' },
+  { id: 'settings', label: '설정', english: 'Settings' },
+];
+
+export const AppHeader = () => {
   const { user, currentTab, setCurrentTab, logout } = useApp();
-
-  const navItems: { id: NavTab; label: string; iconLabel: string }[] = [
-    { id: 'dashboard', label: '홈', iconLabel: '🏠' },
-    { id: 'personalization', label: 'AI 학습', iconLabel: '🧠' },
-    { id: 'diagnosis', label: '발음 관리', iconLabel: '🎤' },
-    { id: 'history', label: '기록', iconLabel: '📜' },
-    { id: 'settings', label: '설정', iconLabel: '⚙️' },
-  ];
+  const [openPanel, setOpenPanel] = useState<'menu' | 'account' | null>(null);
+  const navigate = (tab: NavTab) => { setCurrentTab(tab); setOpenPanel(null); };
+  if (!user) {
+    return (
+      <header className="vb-theme vb-header">
+        <div className="vb-header-inner" style={{ display: 'flex', justifyContent: 'center' }}>
+          <button className="vb-wordmark" aria-label="VoiceBridge 홈" style={{ pointerEvents: 'none' }}>
+            VOICE<span>BRIDGE</span><i aria-hidden="true">∿</i>
+          </button>
+        </div>
+      </header>
+    );
+  }
 
   return (
-    <header className="bg-surface backdrop-blur-xl sticky top-0 z-10 border-b border-border shadow-sm">
-      {/* Top Banner Row */}
-      <div
-        style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '14px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '16px',
-        }}
-      >
-        {/* Service Title & Logo */}
-        <div
-          onClick={() => setCurrentTab('dashboard')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            cursor: 'pointer',
-            userSelect: 'none',
-          }}
-        >
-          <div
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '14px',
-              backgroundColor: 'var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: 'var(--shadow-md)',
-            }}
-          >
-            <Activity size={26} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--color-primary)' }}>
-                VoiceBridge
-              </span>
-              <span
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '2px 8px',
-                  borderRadius: '12px',
-                  backgroundColor: 'var(--color-secondary-light)',
-                  color: 'var(--color-secondary)',
-                  fontWeight: 700,
-                  border: '1px solid var(--color-secondary-border)',
-                }}
-              >
-                AI 보조
-              </span>
-            </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-              AI 구음장애 보조 서비스
-            </p>
-          </div>
-        </div>
-
-        {/* Accessibility Bar & User Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <AccessibilityBar />
-
-          {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '6px 14px',
-                  backgroundColor: 'var(--color-bg-subtle)',
-                  borderRadius: 'var(--border-radius-full)',
-                  border: '1.5px solid var(--color-border)',
-                }}
-              >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--color-primary-light)',
-                    color: 'var(--color-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                  }}
-                >
-                  <UserIcon size={18} />
-                </div>
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-text-title)' }}>
-                  {user.name}님
-                </span>
-              </div>
-              <button
-                onClick={logout}
-                title="로그아웃"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '8px 12px',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  backgroundColor: 'transparent',
-                  borderRadius: 'var(--border-radius-md)',
-                  border: '1px solid var(--color-border)',
-                }}
-              >
-                <LogOut size={16} />
-                <span>로그아웃</span>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setCurrentTab('login')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '10px 18px',
-                backgroundColor: 'var(--color-primary)',
-                color: '#ffffff',
-                fontSize: 'var(--text-sm)',
-                fontWeight: 700,
-                borderRadius: 'var(--border-radius-md)',
-              }}
-            >
-              <LogIn size={18} />
-              <span>로그인하기</span>
-            </button>
-          )}
-        </div>
+    <header className="vb-theme vb-header">
+      {currentTab === 'dashboard' && <a className="vb-skip-link" href="#voicebridge-content">본문으로 이동</a>}
+      <div className="vb-header-inner">
+        <button className="vb-header-action" aria-label="메뉴 열기" aria-expanded={openPanel === 'menu'} aria-haspopup="dialog" onClick={() => setOpenPanel('menu')}>
+          <Menu size={24} strokeWidth={1.5} /><span>MENU</span>
+        </button>
+        <button className="vb-wordmark" aria-label="VoiceBridge 홈" onClick={() => navigate('dashboard')}>VOICE<span>BRIDGE</span><i aria-hidden="true">∿</i></button>
+        <button className="vb-header-action vb-header-account" aria-label={user ? '마이페이지 열기' : '로그인하기'}
+          aria-haspopup={user ? 'dialog' : undefined} aria-expanded={user ? openPanel === 'account' : undefined}
+          onClick={() => user ? setOpenPanel('account') : navigate('login')}>
+          <span>{user ? 'MY PAGE' : 'LOGIN'}</span><UserRound size={23} strokeWidth={1.5} />
+        </button>
       </div>
-
-      {/* Main Navigation Bar */}
-      {user && (
-        <nav
-          style={{
-            backgroundColor: 'var(--color-bg-subtle)',
-            borderTop: '1px solid var(--color-border)',
-            overflowX: 'auto',
-          }}
-        >
-          <div
-            style={{
-              maxWidth: '1280px',
-              margin: '0 auto',
-              display: 'flex',
-              padding: '4px 16px',
-              gap: '8px',
-            }}
-          >
-            {navItems.map((item) => {
-              const isActive = currentTab === item.id || (item.id === 'diagnosis' && currentTab === 'practice');
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentTab(item.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '12px 18px',
-                    fontSize: 'var(--text-base)',
-                    fontWeight: isActive ? 800 : 600,
-                    color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                    backgroundColor: isActive ? 'var(--color-bg-surface)' : 'transparent',
-                    borderBottom: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
-                    borderRadius: '8px 8px 0 0',
-                    whiteSpace: 'nowrap',
-                    transition: 'all var(--transition-fast)',
-                  }}
-                >
-                  <span style={{ fontSize: '1.2rem' }}>{item.iconLabel}</span>
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+      {openPanel === 'menu' && <BrandDialog label="전체 메뉴와 접근성 설정" className="vb-menu-dialog" onClose={() => setOpenPanel(null)}>
+        <div className="vb-drawer">
+          <div className="vb-drawer-top"><span className="vb-eyebrow">VOICEBRIDGE / MENU</span>
+            <button className="vb-icon-button" aria-label="메뉴 닫기" onClick={() => setOpenPanel(null)}><X size={26} /></button>
           </div>
-        </nav>
-      )}
+          {user && <nav aria-label="주요 메뉴">
+            {navItems.map((item,index) => <button key={item.id} onClick={() => navigate(item.id)}
+              aria-current={currentTab === item.id || (item.id === 'diagnosis' && currentTab === 'practice') ? 'page' : undefined}>
+              <span className="vb-nav-index">0{index + 1}</span><span>{item.label}</span><small>{item.english}</small><ArrowUpRight size={22} />
+            </button>)}
+          </nav>}
+          <section className="vb-drawer-access" aria-labelledby="vb-access-title">
+            <h2 id="vb-access-title">편안하게 보기</h2><AccessibilityBar />
+          </section>
+          {!user && <div className="vb-drawer-account"><button className="vb-text-link" onClick={() => navigate('login')}><LogIn size={20} />로그인하기<ArrowUpRight size={20} /></button></div>}
+          <p className="vb-drawer-note">Every voice deserves to be heard.</p>
+        </div>
+      </BrandDialog>}
+      {openPanel === 'account' && user && <BrandDialog label="내 계정 정보" className="vb-account-dialog" onClose={() => setOpenPanel(null)}>
+        <div className="vb-drawer vb-account-drawer">
+          <div className="vb-drawer-top"><span className="vb-eyebrow">VOICEBRIDGE / MY PAGE</span>
+            <button className="vb-icon-button" aria-label="마이페이지 닫기" onClick={() => setOpenPanel(null)}><X size={26} /></button>
+          </div>
+          <section className="vb-profile-section" aria-labelledby="vb-profile-title">
+            <p className="vb-eyebrow" id="vb-profile-title">PROFILE</p>
+            <dl><div><dt>닉네임</dt><dd>{user.name}</dd></div><div><dt>이메일</dt><dd>{user.email}</dd></div></dl>
+          </section>
+          <section className="vb-account-section" aria-labelledby="vb-account-title">
+            <p className="vb-eyebrow" id="vb-account-title">ACCOUNT</p>
+            <button type="button" disabled><span>이메일 변경</span><small>준비 중</small></button>
+            <button type="button" disabled><span>비밀번호 변경</span><small>준비 중</small></button>
+          </section>
+          <button className="vb-account-logout" type="button" onClick={() => { logout(); setOpenPanel(null); }}><span>LOG OUT</span><LogOut size={22} /></button>
+          <p className="vb-drawer-note">계정 정보는 현재 로그인된 프로필을 기준으로 표시됩니다.</p>
+        </div>
+      </BrandDialog>}
     </header>
   );
 };

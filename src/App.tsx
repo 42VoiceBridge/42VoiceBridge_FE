@@ -10,6 +10,7 @@ import { PersonalizationPage } from './pages/personalization/PersonalizationPage
 import { VoiceAssistPage } from './pages/assist/VoiceAssistPage';
 import { HistoryPage } from './pages/history/HistoryPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
+import { AppFooter } from './components/layout/AppFooter';
 
 const AppContent: React.FC = () => {
   const { currentTab, user } = useApp();
@@ -52,49 +53,7 @@ const AppContent: React.FC = () => {
       <AppHeader />
       <main style={{ flex: 1 }}>{renderCurrentPage()}</main>
 
-      {/* Accessible Footer with Senior Helpline */}
-      <footer
-        style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          borderTop: '2px solid var(--color-border)',
-          padding: '28px 24px',
-          marginTop: 'auto',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1120px',
-            margin: '0 auto',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '16px',
-          }}
-        >
-          <div>
-            <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--color-primary)' }}>
-              VoiceBridge (AI 구음장애 보조 서비스)
-            </span>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-              안정적인 의사소통과 선명한 발음을 위한 인공지능 음성 케어 솔루션
-            </p>
-          </div>
-
-          <div
-            style={{
-              padding: '8px 16px',
-              backgroundColor: 'var(--color-bg-subtle)',
-              borderRadius: 'var(--border-radius-md)',
-              border: '1px solid var(--color-border)',
-              fontSize: 'var(--text-sm)',
-              fontWeight: 700,
-            }}
-          >
-            ☎️ 이용 지원 문의 및 상담: <span style={{ color: 'var(--color-primary)' }}>1588-4200</span>
-          </div>
-        </div>
-      </footer>
+      {user && <AppFooter />}
     </div>
   );
 };

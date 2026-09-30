@@ -41,7 +41,7 @@ export const TTSButton: React.FC<TTSButtonProps> = ({
   };
 
   return (
-    <button
+    <button className="tts-button"
       onClick={handleSpeak}
       title="문장을 또박또박 소리로 들려드립니다"
       aria-label={`${text} 소리로 듣기`}

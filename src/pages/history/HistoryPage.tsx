@@ -3,7 +3,6 @@ import {
   TrendingUp,
   ChevronDown,
   ChevronUp,
-  User,
   Mic,
   Activity
 } from 'lucide-react';
@@ -11,6 +10,7 @@ import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import type { RecognitionResponse } from '../../api/recognition';
 import { getRecognitionsApi, getRecognitionApi } from '../../api/recognition';
+import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
 export const HistoryPage: React.FC = () => {
   const { user, setCurrentTab } = useApp();
@@ -68,9 +68,10 @@ export const HistoryPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
+    <div className="vb-theme vb-page vb-page--history responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
+      <FeaturePageHeader eyebrow="HISTORY / YOUR RECORDS" title={<>나의 대화와,<br /><span>목소리의 기록.</span></>} description="실제 음성 인식 결과와 인식 신뢰도의 흐름을 확인합니다." meta={`TOTAL ${recognitions.length}`} />
       {/* User Summary Profile Card */}
-      <div
+      <div className="responsive-panel vb-history-summary"
         style={{
           backgroundColor: 'var(--color-bg-surface)',
           padding: '28px 32px',
@@ -85,29 +86,12 @@ export const HistoryPage: React.FC = () => {
           gap: '20px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <div
-            style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--color-primary-light)',
-              color: 'var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <User size={34} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: 'var(--text-2xl)' }}>{user?.name || '사용자'}님의 음성 인식 기록실</h1>
-            </div>
-            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-              총 {recognitions.length}건의 기록이 있습니다.
-            </p>
-          </div>
+        <div>
+          <p className="vb-eyebrow" style={{ marginBottom: '8px' }}>RECOGNITION ARCHIVE</p>
+          <h2 style={{ fontSize: 'var(--text-2xl)' }}>{user?.name || '사용자'}님의 음성 인식 기록</h2>
+          <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
+            총 {recognitions.length}건의 기록이 있습니다.
+          </p>
         </div>
 
         <SeniorButton
@@ -129,7 +113,7 @@ export const HistoryPage: React.FC = () => {
           {error}
         </div>
       ) : recognitions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--border-radius-lg)', border: '2px solid var(--color-border)' }}>
+        <div className="vb-empty-state" style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--border-radius-lg)', border: '2px solid var(--color-border)' }}>
           <Mic size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 16px' }} />
           <h3 style={{ fontSize: 'var(--text-xl)', marginBottom: '8px' }}>아직 기록이 없습니다.</h3>
           <p style={{ color: 'var(--color-text-muted)' }}>말해서 전달하기를 사용하면 기록이 여기에 표시됩니다.</p>
@@ -137,7 +121,7 @@ export const HistoryPage: React.FC = () => {
       ) : (
         <>
           {/* Score Progress Trend */}
-          <div
+          <section className="responsive-panel vb-history-trend"
             style={{
               backgroundColor: 'var(--color-bg-surface)',
               padding: '30px',
@@ -155,7 +139,7 @@ export const HistoryPage: React.FC = () => {
               최근 기록된 음성 인식의 신뢰도(0~100점) 변화를 보여줍니다.
             </p>
 
-            <div
+            <div className="history-chart"
               style={{
                 display: 'flex',
                 alignItems: 'flex-end',
@@ -176,7 +160,7 @@ export const HistoryPage: React.FC = () => {
                   const isLatest = index === arr.length - 1;
 
                   return (
-                    <div
+                    <div className="history-bar"
                       key={item.recognitionId}
                       style={{
                         display: 'flex',
@@ -209,10 +193,10 @@ export const HistoryPage: React.FC = () => {
                   );
                 })}
             </div>
-          </div>
+          </section>
 
           {/* History Inspection List */}
-          <div>
+          <section className="vb-page-section vb-history-list">
             <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Activity size={24} color="var(--color-secondary)" />
               <span>음성 인식 상세 기록</span>
@@ -224,7 +208,7 @@ export const HistoryPage: React.FC = () => {
                 const score = Math.round(item.confidence * 100);
 
                 return (
-                  <div
+                  <article className="vb-history-row"
                     key={item.recognitionId}
                     style={{
                       backgroundColor: 'var(--color-bg-surface)',
@@ -234,7 +218,7 @@ export const HistoryPage: React.FC = () => {
                       overflow: 'hidden',
                     }}
                   >
-                    <div
+                    <div className="responsive-panel history-summary"
                       onClick={() => toggleExpand(item.recognitionId)}
                       style={{
                         padding: '24px 28px',
@@ -275,7 +259,7 @@ export const HistoryPage: React.FC = () => {
                     </div>
 
                     {isExpanded && (
-                      <div style={{ padding: '24px 28px', borderTop: '2px solid var(--color-border)' }}>
+                      <div className="responsive-panel" style={{ padding: '24px 28px', borderTop: '2px solid var(--color-border)' }}>
                         <div
                           style={{
                             padding: '16px 20px',
@@ -285,7 +269,7 @@ export const HistoryPage: React.FC = () => {
                           }}
                         >
                           <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '4px' }}>
-                            🎤 인식된 전체 텍스트
+                            인식된 전체 텍스트
                           </div>
                           <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-body)', lineHeight: 1.6 }}>
                             {detailData[item.recognitionId] ? detailData[item.recognitionId].recognizedText : item.recognizedText}
@@ -293,11 +277,11 @@ export const HistoryPage: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </article>
                 );
               })}
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>

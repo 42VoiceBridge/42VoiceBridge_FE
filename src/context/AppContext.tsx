@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type {
   User,
   DiagnosisResult,
@@ -44,6 +44,7 @@ interface AppContextType {
   user: User | null;
   currentTab: NavTab;
   setCurrentTab: (tab: NavTab) => void;
+  goBack: () => void;
   login: (email: string, password?: string) => Promise<void>;
   logout: () => void;
 
@@ -82,10 +83,20 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [currentTab, setCurrentTab] = useState<NavTab>(() => {
+  const [currentTab, setCurrentTabState] = useState<NavTab>(() => {
     const savedTab = sessionStorage.getItem('currentTab') as NavTab;
     return savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'login';
   });
+
+  const setCurrentTab = useCallback((tab: NavTab) => {
+    setCurrentTabState(tab);
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
+
+  const goBack = useCallback(() => {
+    setCurrentTabState('dashboard');
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
   
   const [fontSize, setFontSize] = useState<FontSizeLevel>(() => (localStorage.getItem('fontSize') as FontSizeLevel) || 'normal');
   const [highContrast, setHighContrast] = useState<boolean>(() => localStorage.getItem('highContrast') === 'true');
@@ -267,6 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user,
         currentTab,
         setCurrentTab,
+        goBack,
         login,
         logout,
         fontSize,

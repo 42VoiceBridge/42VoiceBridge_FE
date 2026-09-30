@@ -2,6 +2,21 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
 :root {
+  /* Brand renewal tokens. Opt-in through .vb-theme; legacy pages stay unchanged. */
+  --vb-paper: #f6f7f2;
+  --vb-white: #ffffff;
+  --vb-ink: #202e27;
+  --vb-muted: #57665d;
+  --vb-green: #28523e;
+  --vb-green-deep: #193b2b;
+  --vb-tint: #dde7d7;
+  --vb-on-green: #ffffff;
+  --vb-line: #cbd2c8;
+  --vb-on-green-muted: #d3e1d3;
+  --vb-gutter: clamp(20px, 5vw, 80px);
+  --vb-section-space: clamp(72px, 9vw, 144px);
+  --vb-display-scale: 1;
+  --vb-ease: cubic-bezier(.22, 1, .36, 1);
   /* Color Palette - High Contrast & Warm Calming Healthcare Tones */
   --color-bg-base: #F7F5F0; /* Warm Ivory background */
   --color-bg-surface: #FFFFFF; /* Card/section background */
@@ -77,6 +92,7 @@
 
 /* Senior Font Size Overrides */
 [data-font-size="large"] {
+  --vb-display-scale: 1.05;
   --text-xs: 1.05rem;
   --text-sm: 1.18rem;
   --text-base: 1.3rem;
@@ -89,6 +105,7 @@
 }
 
 [data-font-size="xlarge"] {
+  --vb-display-scale: 1.1;
   --text-xs: 1.15rem;
   --text-sm: 1.3rem;
   --text-base: 1.45rem;
@@ -102,6 +119,16 @@
 
 /* High Contrast Mode for vision-impaired seniors */
 [data-high-contrast="true"] {
+  --vb-paper: #090e0b;
+  --vb-white: #111a14;
+  --vb-ink: #ffffff;
+  --vb-muted: #e0e9e2;
+  --vb-green: #b7f1c5;
+  --vb-green-deep: #d6ffdf;
+  --vb-tint: #233c2b;
+  --vb-on-green: #07140b;
+  --vb-on-green-muted: #143b20;
+  --vb-line: #9abca3;
   --color-bg-base: #0a0f1d;
   --color-bg-surface: #141c2e;
   --color-bg-subtle: #1c2740;
