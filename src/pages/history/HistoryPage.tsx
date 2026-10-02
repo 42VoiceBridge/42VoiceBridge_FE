@@ -155,8 +155,8 @@ export const HistoryPage: React.FC = () => {
                 .slice(0, 10)
                 .reverse()
                 .map((item, index, arr) => {
-                  const score = Math.round(item.confidence * 100);
-                  const heightPercent = Math.round((score / 100) * 160);
+                  const score = item.confidence !== null ? Math.round(item.confidence * 100) : null;
+                  const heightPercent = score !== null ? Math.round((score / 100) * 160) : 0;
                   const isLatest = index === arr.length - 1;
 
                   return (
@@ -177,7 +177,7 @@ export const HistoryPage: React.FC = () => {
                           color: isLatest ? 'var(--color-primary)' : 'var(--color-text-muted)',
                         }}
                       >
-                        {score}점
+                        {score !== null ? `${score}점` : '-'}
                       </span>
                       <div
                         style={{
@@ -205,7 +205,7 @@ export const HistoryPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {recognitions.map((item) => {
                 const isExpanded = expandedId === item.recognitionId;
-                const score = Math.round(item.confidence * 100);
+                const score = item.confidence !== null ? Math.round(item.confidence * 100) : null;
 
                 return (
                   <article className="vb-history-row"
@@ -238,14 +238,14 @@ export const HistoryPage: React.FC = () => {
                             color: 'var(--color-primary)',
                           }}
                         >
-                          {score}점
+                          {score !== null ? `${score}점` : 'N/A'}
                         </div>
                         <div>
                           <div style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--color-text-title)' }}>
                             {item.recognizedText.length > 20 ? item.recognizedText.substring(0, 20) + '...' : item.recognizedText}
                           </div>
                           <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '2px' }}>
-                            사용 모델: {item.modelUsed}
+                            사용 모델: {item.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'}
                           </div>
                         </div>
                       </div>

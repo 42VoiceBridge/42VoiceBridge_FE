@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Mic,
   Square,
@@ -11,23 +11,150 @@ import {
 import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
-import { speakText } from '../../utils/audioUtils';
+import { speakText, AudioRecorderService } from '../../utils/audioUtils';
+import { createRecognitionApi, getRecognitionsApi, confirmRecognitionApi } from '../../api/recognition';
+import type { RecognitionResponse } from '../../api/recognition';
+import { requestTtsApi, getTtsStatusApi } from '../../api/tts';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
 export const VoiceAssistPage: React.FC = () => {
-  const { assistMessages } = useApp();
+  const { } = useApp();
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bigViewText, setBigViewText] = useState<string | null>(null);
+  const [recentRecognitions, setRecentRecognitions] = useState<RecognitionResponse[]>([]);
+  const [activeRecognitionId, setActiveRecognitionId] = useState<string | null>(null);
+  const [editableText, setEditableText] = useState<string>('');
+  const [isConfirming, setIsConfirming] = useState(false);
+  
+  type ConfirmedData = { confirmationId: string; confirmedText: string };
+  const [confirmedRecognitions, setConfirmedRecognitions] = useState<Record<string, ConfirmedData>>({});
+  
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  
+  const recorderRef = useRef<AudioRecorderService | null>(null);
 
-
-
-  const handleStartAssistRecord = () => {
-    alert('실시간 음성 변환(Voice Assist) 기능은 현재 준비 중입니다.');
+  const fetchRecent = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token || token === 'mock-token') return;
+    try {
+      const res = await getRecognitionsApi(token, 0, 10);
+      if (res.success && res.data) {
+        setRecentRecognitions(res.data.content);
+      }
+    } catch (err) {
+      console.error('Failed to load recent recognitions:', err);
+    }
   };
 
-  const handleStopAssistRecord = () => {
+  useEffect(() => {
+    fetchRecent();
+    return () => {
+      if (recorderRef.current) {
+        recorderRef.current.stopRecording().catch(() => {});
+      }
+    };
+  }, []);
+
+  const handleStartAssistRecord = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    try {
+      recorderRef.current = new AudioRecorderService();
+      const started = await recorderRef.current.startRecording();
+      if (started) {
+        setIsRecording(true);
+      } else {
+        alert('마이크 접근이 거부되었거나 권한이 없습니다.');
+      }
+    } catch (e) {
+      alert('마이크를 시작하는 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleStopAssistRecord = async () => {
+    if (!recorderRef.current) return;
+    
     setIsRecording(false);
+    setIsProcessing(true);
+    
+    try {
+      const audioUrl = await recorderRef.current.stopRecording();
+      if (!audioUrl) {
+        alert('녹음된 오디오가 없습니다.');
+        setIsProcessing(false);
+        return;
+      }
+      
+      const blob = await fetch(audioUrl).then(r => r.blob());
+      if (blob.size === 0) {
+        alert('오디오 크기가 0입니다. 다시 시도해주세요.');
+        setIsProcessing(false);
+        return;
+      }
+      if (blob.size > 10 * 1024 * 1024) {
+        alert('녹음 파일이 너무 큽니다. 다시 시도해주세요.');
+        setIsProcessing(false);
+        return;
+      }
+
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('인증이 필요합니다.');
+      
+      const res = await createRecognitionApi(token, blob);
+      if (res.success && res.data) {
+        setActiveRecognitionId(res.data.recognitionId);
+        setEditableText(res.data.recognizedText || '');
+        await fetchRecent();
+      }
+    } catch (err: any) {
+      if (err.message && (err.message.includes('401') || err.message.includes('403'))) {
+        alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+      } else if (err.message && err.message.includes('400')) {
+        alert('올바르지 않은 녹음 파일입니다. 다시 말씀해주세요.');
+      } else {
+        alert(err.message || '음성 인식 처리 중 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleConfirm = async (recognitionId: string) => {
+    const textToConfirm = editableText.trim();
+    if (!textToConfirm) {
+      alert('확정할 텍스트가 비어 있습니다.');
+      return;
+    }
+    
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    setIsConfirming(true);
+    try {
+      const res = await confirmRecognitionApi(token, recognitionId, textToConfirm);
+      if (res.success && res.data) {
+        setConfirmedRecognitions(prev => ({
+          ...prev,
+          [recognitionId]: {
+            confirmationId: res.data!.confirmationId,
+            confirmedText: res.data!.confirmedText
+          }
+        }));
+      }
+    } catch (err: any) {
+      alert(err.message || '텍스트 확정 중 오류가 발생했습니다.');
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -36,8 +163,66 @@ export const VoiceAssistPage: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleSpeakAloud = (text: string) => {
-    speakText(text, 0.9);
+  const handleSpeakAloud = async (recognitionId: string, text: string) => {
+    if (speakingId) return;
+
+    const confirmed = confirmedRecognitions[recognitionId];
+    if (confirmed && confirmed.confirmationId) {
+      setSpeakingId(recognitionId);
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token) throw new Error('인증이 필요합니다.');
+
+        const reqPayload = {
+          confirmationId: confirmed.confirmationId,
+          idempotencyKey: crypto.randomUUID()
+        };
+        const reqRes = await requestTtsApi(token, reqPayload);
+        if (!reqRes.success || !reqRes.data) throw new Error('TTS 요청 실패');
+
+        const ttsId = reqRes.data.ttsId;
+        
+        let audioUrl: string | null = null;
+        let attempts = 0;
+        const maxAttempts = 15;
+        
+        while (attempts < maxAttempts) {
+          const statusRes = await getTtsStatusApi(token, ttsId);
+          if (statusRes.success && statusRes.data) {
+            if (statusRes.data.status === 'COMPLETED') {
+              audioUrl = statusRes.data.audioUrl;
+              break;
+            } else if (statusRes.data.status === 'FAILED') {
+              throw new Error('TTS 생성 실패 (FAILED)');
+            }
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          attempts++;
+        }
+
+        if (!audioUrl) {
+          throw new Error('TTS 대기 시간 초과 또는 URL 없음');
+        }
+
+        // NOTE: LocalFileStorageAdapter does not serve the HTTP route for audioUrl yet.
+        // For safety, we report this and fallback to Browser SpeechSynthesis for now.
+        console.warn('Backend에서 audioUrl serving 설정 확인 필요:', audioUrl);
+        throw new Error('Backend에서 audioUrl serving 설정 확인 필요');
+        
+      } catch (err) {
+        console.warn('Backend TTS failed, falling back to Browser SpeechSynthesis', err);
+        await speakText(text, 0.9);
+      } finally {
+        setSpeakingId(null);
+      }
+    } else {
+      setSpeakingId(recognitionId);
+      try {
+        await speakText(text, 0.9);
+      } finally {
+        setSpeakingId(null);
+      }
+    }
   };
 
   return (
@@ -56,10 +241,12 @@ export const VoiceAssistPage: React.FC = () => {
         }}
       >
         <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '12px' }}>
-          {isRecording ? '말씀을 듣고 있어요...' : '마이크를 켜고 편안하게 말씀하세요'}
+          {isProcessing ? 'AI가 음성을 인식하고 있어요...' : isRecording ? '말씀을 듣고 있어요...' : '마이크를 켜고 편안하게 말씀하세요'}
         </h2>
         <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '24px' }}>
-          {isRecording
+          {isProcessing
+            ? '잠시만 기다려주세요.'
+            : isRecording
             ? '다 말씀하신 후 아래 [말씀 완료] 버튼을 눌러주세요.'
             : '예: "따뜻한 물 한 잔만 부탁드립니다."'}
         </p>
@@ -69,7 +256,7 @@ export const VoiceAssistPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          {!isRecording ? (
+          {!isRecording && !isProcessing ? (
             <SeniorButton
               variant="primary"
               size="huge"
@@ -79,7 +266,7 @@ export const VoiceAssistPage: React.FC = () => {
             >
               말씀 시작하기 (마이크 켜기)
             </SeniorButton>
-          ) : (
+          ) : isRecording ? (
             <SeniorButton
               variant="danger"
               size="huge"
@@ -88,6 +275,14 @@ export const VoiceAssistPage: React.FC = () => {
             >
               말씀 완료 (AI 보정하기)
             </SeniorButton>
+          ) : (
+             <SeniorButton
+               variant="outline"
+               size="huge"
+               disabled
+             >
+               처리 중입니다...
+             </SeniorButton>
           )}
         </div>
       </div>
@@ -100,9 +295,9 @@ export const VoiceAssistPage: React.FC = () => {
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {assistMessages.map((msg) => (
+          {recentRecognitions.map((msg) => (
             <article className="responsive-panel vb-conversation-row"
-              key={msg.id}
+              key={msg.recognitionId}
               style={{
                 backgroundColor: 'var(--color-bg-surface)',
                 padding: '24px 28px',
@@ -113,7 +308,8 @@ export const VoiceAssistPage: React.FC = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  {msg.timestamp}
+                  {/* API response does not contain a timestamp in this mock/stub, so we just use current time or leave it out if we want. In a real app we'd use msg.createdAt if available */}
+                  방금 전
                 </span>
                 <span
                   style={{
@@ -126,7 +322,7 @@ export const VoiceAssistPage: React.FC = () => {
                     border: '1px solid var(--color-secondary-border)',
                   }}
                 >
-                  개인 모델 정확도 {msg.confidence}%
+                  {msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'} {msg.confidence !== null ? `신뢰도 ${Math.round(msg.confidence * 100)}%` : '(신뢰도 제공 안 됨)'}
                 </span>
               </div>
 
@@ -146,23 +342,63 @@ export const VoiceAssistPage: React.FC = () => {
                     marginBottom: '12px',
                   }}
                 >
-                  "{msg.originalText}"
+                  "(음성 인식 기록)"
                 </div>
 
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-primary)', fontWeight: 800, marginBottom: '4px' }}>
                   AI 보정 의사소통 문장:
                 </div>
-                {/* Big Readability Text for Elderly & Conversational Partner */}
-                <div
-                  style={{
-                    fontSize: 'var(--text-2xl)',
-                    fontWeight: 900,
-                    color: 'var(--color-text-title)',
-                    lineHeight: 1.4,
-                  }}
-                >
-                  "{msg.correctedText}"
-                </div>
+                {msg.recognitionId === activeRecognitionId && !confirmedRecognitions[msg.recognitionId] ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <textarea
+                      value={editableText}
+                      onChange={(e) => setEditableText(e.target.value)}
+                      disabled={isConfirming}
+                      style={{
+                        fontSize: 'var(--text-2xl)',
+                        fontWeight: 900,
+                        color: 'var(--color-text-title)',
+                        lineHeight: 1.4,
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '2px solid var(--color-primary-border)',
+                        backgroundColor: 'var(--color-bg-surface)',
+                        resize: 'vertical',
+                        minHeight: '80px',
+                      }}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <SeniorButton
+                        variant="primary"
+                        size="normal"
+                        icon={<Check size={20} />}
+                        onClick={() => handleConfirm(msg.recognitionId)}
+                        disabled={isConfirming}
+                      >
+                        {isConfirming ? '확정 중...' : '문장 확정하기'}
+                      </SeniorButton>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div
+                      style={{
+                        fontSize: 'var(--text-2xl)',
+                        fontWeight: 900,
+                        color: 'var(--color-text-title)',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      "{confirmedRecognitions[msg.recognitionId] ? confirmedRecognitions[msg.recognitionId].confirmedText : msg.recognizedText}"
+                    </div>
+                    {confirmedRecognitions[msg.recognitionId] && (
+                      <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-primary)', fontWeight: 'bold', padding: '6px 10px', backgroundColor: 'var(--color-primary-light)', borderRadius: '6px' }}>
+                        확정 완료
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons for Elderly User */}
@@ -171,16 +407,16 @@ export const VoiceAssistPage: React.FC = () => {
                   variant="secondary"
                   size="normal"
                   icon={<Volume2 size={20} />}
-                  onClick={() => handleSpeakAloud(msg.correctedText)}
+                  onClick={() => handleSpeakAloud(msg.recognitionId, confirmedRecognitions[msg.recognitionId] ? confirmedRecognitions[msg.recognitionId].confirmedText : msg.recognizedText)}
                 >
-                  상대방에게 또렷하게 들려주기
+                  {speakingId === msg.recognitionId ? '들려주는 중...' : '상대방에게 또렷하게 들려주기'}
                 </SeniorButton>
 
                 <SeniorButton
                   variant="outline"
                   size="normal"
                   icon={<Maximize2 size={20} />}
-                  onClick={() => setBigViewText(msg.correctedText)}
+                  onClick={() => setBigViewText(confirmedRecognitions[msg.recognitionId] ? confirmedRecognitions[msg.recognitionId].confirmedText : msg.recognizedText)}
                 >
                   화면 가득 크게 보여주기
                 </SeniorButton>
@@ -188,10 +424,10 @@ export const VoiceAssistPage: React.FC = () => {
                 <SeniorButton
                   variant="ghost"
                   size="normal"
-                  icon={copiedId === msg.id ? <Check size={20} color="var(--color-secondary)" /> : <Copy size={20} />}
-                  onClick={() => handleCopy(msg.id, msg.correctedText)}
+                  icon={copiedId === msg.recognitionId ? <Check size={20} color="var(--color-secondary)" /> : <Copy size={20} />}
+                  onClick={() => handleCopy(msg.recognitionId, confirmedRecognitions[msg.recognitionId] ? confirmedRecognitions[msg.recognitionId].confirmedText : msg.recognizedText)}
                 >
-                  {copiedId === msg.id ? '복사됨!' : '글자 복사'}
+                  {copiedId === msg.recognitionId ? '복사됨!' : '글자 복사'}
                 </SeniorButton>
               </div>
             </article>
@@ -259,9 +495,12 @@ export const VoiceAssistPage: React.FC = () => {
               variant="secondary"
               size="large"
               icon={<Volume2 size={24} />}
-              onClick={() => handleSpeakAloud(bigViewText)}
+              onClick={() => {
+                setSpeakingId('big-view');
+                speakText(bigViewText, 0.9).finally(() => setSpeakingId(null));
+              }}
             >
-              소리로 읽어주기
+              {speakingId === 'big-view' ? '듣는 중...' : '소리로 읽어주기'}
             </SeniorButton>
           </div>
         </div>

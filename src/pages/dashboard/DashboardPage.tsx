@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowDown, ArrowRight, ArrowUpRight, Check, Copy, Maximize2, Mic, Volume2, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { speakText } from '../../utils/audioUtils';
@@ -6,12 +6,32 @@ import { BrandDialog } from '../../components/common/BrandDialog';
 import { HeroSlider } from '../../components/home/HeroSlider';
 import { VoiceGraphic } from '../../components/home/VoiceGraphic';
 import { Reveal } from '../../components/home/Reveal';
+import { getRecognitionsApi } from '../../api/recognition';
+import type { RecognitionResponse } from '../../api/recognition';
 
 export const DashboardPage = () => {
-  const { user, assistMessages, setCurrentTab } = useApp();
+  const { user, setCurrentTab } = useApp();
+  const [recentRecognitions, setRecentRecognitions] = useState<RecognitionResponse[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bigViewText, setBigViewText] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRecent = async () => {
+      const token = localStorage.getItem('accessToken');
+      if (!token || token === 'mock-token') return;
+      
+      try {
+        const res = await getRecognitionsApi(token, 0, 2);
+        if (res.success && res.data) {
+          setRecentRecognitions(res.data.content);
+        }
+      } catch (err) {
+        console.error('Failed to load recent recognitions:', err);
+      }
+    };
+    fetchRecent();
+  }, []);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -81,19 +101,23 @@ export const DashboardPage = () => {
             <div className="vb-section-copy"><h3>나의 목소리를,<br />조금 더 잘 이해하도록.</h3><p className="vb-muted">저마다 다른 발화의 리듬과 습관.<br />개인화 학습과 발음 관리로<br />나에게 맞는 소통을 준비합니다.</p>
               <button className="vb-feature-link" onClick={() => setCurrentTab('personalization')}><span><small>PERSONALIZATION</small>나의 AI 학습</span><ArrowUpRight size={26} /></button>
               <button className="vb-feature-link" onClick={() => setCurrentTab('diagnosis')}><span><small>SPEECH CARE</small>발음 관리 시작하기</span><ArrowUpRight size={26} /></button>
+              <button className="vb-feature-link" onClick={() => setCurrentTab('practice')}><span><small>PRACTICE</small>추천 문장 연습하기</span><ArrowUpRight size={26} /></button>
             </div>
           </div>
         </Reveal>
       </section>
 
-      {assistMessages.length > 0 && <section className="vb-recent vb-container" aria-label="최근 대화 결과">
+      {recentRecognitions.length > 0 && <section className="vb-recent vb-container" aria-label="최근 대화 결과">
         <details><summary><span>{user?.name}님의 최근 대화</span><span className="vb-recent-hint">대화 결과 보기 <ArrowDown size={20} /></span></summary>
-          <div className="vb-recent-list">{assistMessages.slice(0, 2).map(msg => <article key={msg.id}>
-            <p className="vb-eyebrow">{msg.timestamp} · 개인 모델 정확도 {msg.confidence}%</p><p className="vb-recent-text">“{msg.correctedText}”</p>
+          <div className="vb-recent-list">{recentRecognitions.map(msg => <article key={msg.recognitionId}>
+            <p className="vb-eyebrow">
+              {new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} · {msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'} {msg.confidence !== null ? `신뢰도 ${Math.round(msg.confidence * 100)}%` : '(신뢰도 제공 안 됨)'}
+            </p>
+            <p className="vb-recent-text">“{msg.recognizedText}”</p>
             <div className="vb-recent-actions">
-              <button className="vb-text-link" onClick={() => handleSpeakAloud(msg.correctedText)}><Volume2 size={20} />{speakingId === msg.id ? '듣는 중...' : '또렷하게 들려주기'}</button>
-              <button className="vb-text-link" onClick={() => setBigViewText(msg.correctedText)}><Maximize2 size={20} />화면 가득 보여주기</button>
-              <button className="vb-text-link" onClick={() => handleCopy(msg.id, msg.correctedText)}>{copiedId === msg.id ? <Check size={20} /> : <Copy size={20} />}{copiedId === msg.id ? '복사됨!' : '글자 복사'}</button>
+              <button className="vb-text-link" onClick={() => handleSpeakAloud(msg.recognizedText)}><Volume2 size={20} />{speakingId === msg.recognitionId ? '듣는 중...' : '또렷하게 들려주기'}</button>
+              <button className="vb-text-link" onClick={() => setBigViewText(msg.recognizedText)}><Maximize2 size={20} />화면 가득 보여주기</button>
+              <button className="vb-text-link" onClick={() => handleCopy(msg.recognitionId, msg.recognizedText)}>{copiedId === msg.recognitionId ? <Check size={20} /> : <Copy size={20} />}{copiedId === msg.recognitionId ? '복사됨!' : '글자 복사'}</button>
             </div>
           </article>)}</div>
         </details>

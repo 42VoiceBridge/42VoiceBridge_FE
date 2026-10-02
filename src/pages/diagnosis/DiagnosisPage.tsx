@@ -665,6 +665,15 @@ export const DiagnosisPage: React.FC = () => {
             </SeniorButton>
 
             <SeniorButton
+              variant="outline"
+              size="large"
+              icon={<ArrowRight size={22} />}
+              onClick={() => setCurrentTab('practice')}
+            >
+              추천 연습 문장 보기
+            </SeniorButton>
+
+            <SeniorButton
               variant="primary"
               size="large"
               icon={<ArrowRight size={22} />}

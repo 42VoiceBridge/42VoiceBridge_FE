@@ -4,7 +4,6 @@ import type {
   DiagnosisResult,
   PracticeSentence,
   PersonalizationStatus,
-  AssistVoiceMessage,
   FontSizeLevel,
 } from '../types';
 import {
@@ -12,7 +11,6 @@ import {
   initialHistoryResults,
   practiceSentences as defaultPracticeSentences,
   initialPersonalizationStatus,
-  initialVoiceAssistHistory,
 } from '../utils/mockData';
 
 export type NavTab =
@@ -46,6 +44,7 @@ interface AppContextType {
   setCurrentTab: (tab: NavTab) => void;
   goBack: () => void;
   login: (email: string, password?: string) => Promise<void>;
+  loginWithKakao: () => Promise<void>;
   logout: () => void;
 
   // Senior Accessibility Settings
@@ -72,12 +71,9 @@ interface AppContextType {
   addVoiceSample: () => void;
   triggerModelTraining: () => void;
 
-  // Realtime Voice Assist
-  assistMessages: AssistVoiceMessage[];
-  addAssistMessage: (original: string, corrected: string, confidence: number) => void;
 }
 
-import { loginApi, getMeApi } from '../api/auth';
+import { loginApi, getMeApi, kakaoLoginApi } from '../api/auth';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -113,7 +109,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [latestDiagnosis, setLatestDiagnosis] = useState<DiagnosisResult>(initialDiagnosisResult);
   const [practiceList, setPracticeList] = useState<PracticeSentence[]>(defaultPracticeSentences);
   const [personalization, setPersonalization] = useState<PersonalizationStatus>(initialPersonalizationStatus);
-  const [assistMessages, setAssistMessages] = useState<AssistVoiceMessage[]>(initialVoiceAssistHistory);
 
   // Sync currentTab
   useEffect(() => {
@@ -136,12 +131,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     document.documentElement.setAttribute('data-high-contrast', String(highContrast));
   }, [fontSize, highContrast, autoTtsPlayback, speechRate]);
 
+  // Handle Kakao OAuth Callback
+  useEffect(() => {
+    const handleKakaoCallback = async () => {
+      if (window.location.pathname === '/auth/kakao/callback') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+
+        // Clean up URL immediately to prevent StrictMode double execution
+        window.history.replaceState({}, document.title, '/');
+
+        if (error) {
+          alert('카카오 로그인 중 오류가 발생하거나 취소되었습니다.');
+          setCurrentTab('login');
+          return;
+        }
+
+        if (code) {
+          try {
+            const res = await kakaoLoginApi(code);
+            if (res.success && res.data) {
+              localStorage.setItem('accessToken', res.data.accessToken);
+              localStorage.setItem('refreshToken', res.data.refreshToken);
+              
+              const profileRes = await getMeApi(res.data.accessToken);
+              if (profileRes.success && profileRes.data) {
+                if (profileRes.data.email) {
+                  localStorage.setItem('userEmail', profileRes.data.email);
+                } else {
+                  localStorage.removeItem('userEmail');
+                }
+                setUser({
+                  id: profileRes.data.userId,
+                  name: profileRes.data.nickname,
+                  email: profileRes.data.email ?? '',
+                  createdAt: new Date().toISOString().split('T')[0],
+                });
+                setCurrentTab('dashboard');
+              } else {
+                throw new Error('사용자 정보를 가져오는데 실패했습니다.');
+              }
+            } else {
+              throw new Error('VoiceBridge 로그인에 실패했습니다.');
+            }
+          } catch (err: any) {
+            alert(err.message || '카카오 로그인 처리 중 오류가 발생했습니다.');
+            setCurrentTab('login');
+          }
+        }
+      }
+    };
+
+    handleKakaoCallback();
+  }, [setCurrentTab]);
+
   // Restore login state from localStorage on mount
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
     const savedEmail = localStorage.getItem('userEmail');
-    if (token && savedEmail) {
+    if (token) {
       if (token === 'mock-token') {
+        if (!savedEmail) return;
         setUser({
           id: 'user-01',
           name: '홍길동',
@@ -158,7 +209,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setUser({
                 id: res.data.userId,
                 name: res.data.nickname,
-                email: res.data.email,
+                email: res.data.email ?? '',
                 createdAt: new Date().toISOString().split('T')[0],
               });
               if (currentTab === 'login' || currentTab === 'register') {
@@ -192,7 +243,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setUser({
             id: profileRes.data.userId,
             name: profileRes.data.nickname,
-            email: profileRes.data.email,
+            email: profileRes.data.email ?? '',
             createdAt: new Date().toISOString().split('T')[0],
           });
           setCurrentTab('dashboard');
@@ -210,6 +261,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       setCurrentTab('dashboard');
     }
+  };
+
+  const loginWithKakao = async () => {
+    const kakao = (window as any).Kakao;
+    if (!kakao) {
+      throw new Error('카카오 SDK가 로드되지 않았습니다.');
+    }
+
+    if (!kakao.isInitialized()) {
+      const key = import.meta.env.VITE_KAKAO_JAVASCRIPT_KEY;
+      if (!key) {
+        throw new Error('카카오 JavaScript Key가 설정되지 않았습니다.');
+      }
+      kakao.init(key);
+    }
+
+    kakao.Auth.authorize({
+      redirectUri: 'http://localhost:5173/auth/kakao/callback'
+    });
   };
 
   const logout = () => {
@@ -261,16 +331,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 2500);
   };
 
-  const addAssistMessage = (originalText: string, correctedText: string, confidence: number) => {
-    const newMessage: AssistVoiceMessage = {
-      id: 'msg-' + Date.now(),
-      timestamp: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-      originalText,
-      correctedText,
-      confidence,
-    };
-    setAssistMessages(prev => [newMessage, ...prev]);
-  };
 
   return (
     <AppContext.Provider
@@ -280,6 +340,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentTab,
         goBack,
         login,
+        loginWithKakao,
         logout,
         fontSize,
         setFontSize,
@@ -297,8 +358,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         personalization,
         addVoiceSample,
         triggerModelTraining,
-        assistMessages,
-        addAssistMessage,
       }}
     >
       {children}

@@ -4,7 +4,6 @@ import type {
   DiagnosisResult,
   PracticeSentence,
   PersonalizationStatus,
-  AssistVoiceMessage,
 } from '../types';
 
 export const currentUser: User = {
@@ -184,26 +183,3 @@ export const initialHistoryResults: DiagnosisResult[] = [
   },
 ];
 
-export const initialVoiceAssistHistory: AssistVoiceMessage[] = [
-  {
-    id: 'msg-1',
-    timestamp: '오후 03:15',
-    originalText: '오..느.. 나..씨 조..아..요',
-    correctedText: '오늘 날씨가 참 좋습니다.',
-    confidence: 94,
-  },
-  {
-    id: 'msg-2',
-    timestamp: '오후 03:18',
-    originalText: '따..뜻..한 물.. 한.. 잔.. 주..세..요',
-    correctedText: '따뜻한 물 한 잔만 부탁드립니다.',
-    confidence: 96,
-  },
-  {
-    id: 'msg-3',
-    timestamp: '오후 03:22',
-    originalText: '벼..ㅇ..원.. 몇..시..에 가..나..요',
-    correctedText: '병원에 몇 시에 방문하면 되나요?',
-    confidence: 91,
-  },
-];

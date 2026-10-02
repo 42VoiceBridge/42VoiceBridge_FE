@@ -1,57 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Mic,
   Square,
   X,
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 import { useApp } from '../../context/AppContext';
-import type { PracticeSentence } from '../../types';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { TTSButton } from '../../components/common/TTSButton';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
+import { getRecommendationsApi } from '../../api/recommendation';
+import type { RecommendationSentence } from '../../api/recommendation';
 
 export const PracticePage: React.FC = () => {
-  const { practiceList } = useApp();
-  const [selectedPhoneme, setSelectedPhoneme] = useState<string>('all');
-  const [activeSentence, setActiveSentence] = useState<PracticeSentence | null>(null);
+  const { setCurrentTab } = useApp();
+  
+  const [sentences, setSentences] = useState<RecommendationSentence[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [activeSentence, setActiveSentence] = useState<RecommendationSentence | null>(null);
 
   // Practice Modal State
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
-  const [practiceScore, setPracticeScore] = useState<number | null>(null);
 
-  const categories = [
-    { id: 'all', label: '전체 문장' },
-    { id: 'ㄹ', label: 'ㄹ 집중 연습' },
-    { id: 'ㅅ', label: 'ㅅ 집중 연습' },
-    { id: 'ㅈ', label: 'ㅈ 집중 연습' },
-  ];
+  const loadRecommendations = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        setError('로그인이 필요합니다.');
+        setLoading(false);
+        return;
+      }
+      
+      const res = await getRecommendationsApi(token, 10);
+      if (res.success && res.data && res.data.sentences) {
+        if (res.data.sentences.length === 0) {
+          setError('추천받을 문장이 없습니다. 나중에 다시 시도해주세요.');
+        } else {
+          setSentences(res.data.sentences);
+        }
+      } else {
+        throw new Error('응답 형식이 올바르지 않습니다.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || '문장을 불러오는 데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const filteredList = practiceList.filter((item) => {
-    if (selectedPhoneme === 'all') return true;
-    return item.targetPhonemes.includes(selectedPhoneme);
-  });
+  const hasFetchedRef = useRef(false);
 
-  const openPracticeModal = (sentence: PracticeSentence) => {
+  useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+    loadRecommendations();
+  }, [loadRecommendations]);
+
+  const openPracticeModal = (sentence: RecommendationSentence) => {
     setActiveSentence(sentence);
     setIsRecording(false);
     setHasRecorded(false);
-    setPracticeScore(sentence.lastScore || null);
   };
 
   const closePracticeModal = () => {
     setActiveSentence(null);
     setIsRecording(false);
     setHasRecorded(false);
-    setPracticeScore(null);
   };
 
   const handleStartPracticeRecord = () => {
     setIsRecording(true);
     setHasRecorded(false);
-    setPracticeScore(null);
   };
 
   const handleStopPracticeRecord = () => {
@@ -61,117 +89,57 @@ export const PracticePage: React.FC = () => {
 
   return (
     <div className="vb-theme vb-page vb-page--practice responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="PRACTICE / SPEECH CARE" title={<>문장을 천천히,<br /><span>나의 목소리로.</span></>} description="취약 음소에 맞춘 문장을 듣고, 읽고, 반복해서 연습합니다." />
-      {/* Filter Tabs */}
-      <div className="vb-filter-tabs"
-        style={{
-          display: 'flex',
-          gap: '10px',
-          overflowX: 'auto',
-          marginBottom: '24px',
-          paddingBottom: '6px',
-        }}
-      >
-        {categories.map((cat) => (
-          <button className="touch-control"
-            key={cat.id}
-            onClick={() => setSelectedPhoneme(cat.id)}
-            style={{
-              padding: '12px 24px',
-              fontSize: 'var(--text-base)',
-              fontWeight: 800,
-              borderRadius: 'var(--border-radius-full)',
-              border:
-                selectedPhoneme === cat.id
-                  ? '2px solid var(--color-secondary)'
-                  : '2px solid var(--color-border)',
-              backgroundColor:
-                selectedPhoneme === cat.id ? 'var(--color-secondary)' : 'var(--color-bg-surface)',
-              color: selectedPhoneme === cat.id ? '#ffffff' : 'var(--color-text-body)',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              boxShadow: selectedPhoneme === cat.id ? 'var(--shadow-md)' : 'none',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {cat.label}
-          </button>
-        ))}
+      <FeaturePageHeader eyebrow="PRACTICE / SPEECH CARE" title={<>문장을 천천히,<br /><span>나의 목소리로.</span></>} description="문장을 듣고, 읽고, 반복해서 연습합니다." />
+      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h2 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 800 }}>추천 연습 문장</h2>
+        <SeniorButton
+          variant="outline"
+          size="normal"
+          icon={<RefreshCw size={18} className={loading ? "spin-animation" : ""} />}
+          onClick={loadRecommendations}
+          disabled={loading}
+        >
+          {loading ? '불러오는 중...' : '새 문장 불러오기'}
+        </SeniorButton>
       </div>
 
-      {/* Sentences Grid List */}
-      <div className="vb-practice-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {filteredList.map((sentence) => (
-          <article className="responsive-panel vb-practice-row"
-            key={sentence.id}
-            style={{
-              backgroundColor: 'var(--color-bg-surface)',
-              padding: '24px 28px',
-              borderRadius: 'var(--border-radius-lg)',
-              border: '2px solid var(--color-border)',
-              boxShadow: 'var(--shadow-sm)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '20px',
-            }}
-          >
-            <div className="practice-copy" style={{ flex: 1, minWidth: '260px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 700,
-                    padding: '4px 10px',
-                    backgroundColor: 'var(--color-bg-subtle)',
-                    color: 'var(--color-text-muted)',
-                    borderRadius: '8px',
-                  }}
-                >
-                  {sentence.category}
-                </span>
-
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  {sentence.targetPhonemes.map((p) => (
-                    <span
-                      key={p}
-                      style={{
-                        fontSize: 'var(--text-xs)',
-                        fontWeight: 800,
-                        backgroundColor: 'var(--color-accent-light)',
-                        color: 'var(--color-accent)',
-                        padding: '2px 8px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--color-accent-border)',
-                      }}
-                    >
-                      '{p}' 조음
-                    </span>
-                  ))}
+      {error ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-danger)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--color-danger)' }}>
+          <AlertCircle size={40} style={{ margin: '0 auto 16px', display: 'block' }} />
+          <p style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '16px' }}>{error}</p>
+          <SeniorButton variant="primary" onClick={loadRecommendations}>다시 시도</SeniorButton>
+          {error.includes('로그인') && (
+            <SeniorButton variant="secondary" onClick={() => setCurrentTab('login')} style={{ marginLeft: '12px' }}>로그인하러 가기</SeniorButton>
+          )}
+        </div>
+      ) : loading && sentences.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-text-muted)' }}>
+          추천 문장을 불러오는 중입니다...
+        </div>
+      ) : (
+        <div className="vb-practice-list" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {sentences.map((sentence) => (
+            <article className="responsive-panel vb-practice-row"
+              key={sentence.promptId}
+              style={{
+                backgroundColor: 'var(--color-bg-surface)',
+                padding: '24px 28px',
+                borderRadius: 'var(--border-radius-lg)',
+                border: '2px solid var(--color-border)',
+                boxShadow: 'var(--shadow-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '20px',
+              }}
+            >
+              <div className="practice-copy" style={{ flex: 1, minWidth: '260px' }}>
+                <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--color-text-title)' }}>
+                  {sentence.text}
                 </div>
-
-                {sentence.lastScore && (
-                  <span
-                    style={{
-                      fontSize: 'var(--text-xs)',
-                      fontWeight: 800,
-                      color: 'var(--color-secondary)',
-                      backgroundColor: 'var(--color-secondary-light)',
-                      padding: '2px 8px',
-                      borderRadius: '6px',
-                    }}
-                  >
-                    최근 {sentence.lastScore}점
-                  </span>
-                )}
               </div>
-
-              {/* Big Sentence Text */}
-              <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--color-text-title)' }}>
-                {sentence.text}
-              </div>
-            </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <TTSButton text={sentence.text} label="듣기" size="normal" />
@@ -185,8 +153,9 @@ export const PracticePage: React.FC = () => {
               </SeniorButton>
             </div>
           </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* PRACTICE MODAL */}
       {activeSentence && (
@@ -233,22 +202,7 @@ export const PracticePage: React.FC = () => {
               <X size={26} />
             </button>
 
-            <span
-              style={{
-                display: 'inline-block',
-                fontSize: 'var(--text-xs)',
-                fontWeight: 700,
-                color: 'var(--color-secondary)',
-                backgroundColor: 'var(--color-secondary-light)',
-                padding: '4px 12px',
-                borderRadius: '12px',
-                marginBottom: '12px',
-              }}
-            >
-              {activeSentence.category}
-            </span>
-
-            <p id="practice-dialog-title" style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
+            <p id="practice-dialog-title" style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '16px', marginTop: '16px' }}>
               문장을 또박또박 발음해보세요.
             </p>
 
@@ -277,27 +231,7 @@ export const PracticePage: React.FC = () => {
               <AudioVisualizer isRecording={isRecording} height={70} />
             </div>
 
-            {/* Score Result if evaluated */}
-            {practiceScore !== null && (
-              <div
-                style={{
-                  padding: '18px',
-                  borderRadius: 'var(--border-radius-md)',
-                  backgroundColor: practiceScore >= 85 ? 'var(--color-secondary-light)' : 'var(--color-primary-light)',
-                  border: `2px solid ${practiceScore >= 85 ? 'var(--color-secondary-border)' : 'var(--color-primary-border)'}`,
-                  marginBottom: '24px',
-                }}
-              >
-                <div style={{ fontSize: 'var(--text-3xl)', fontWeight: 900, color: 'var(--color-text-title)' }}>
-                  발음 일치도: <span style={{ color: practiceScore >= 85 ? 'var(--color-secondary)' : 'var(--color-primary)' }}>{practiceScore}점</span>
-                </div>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                  {practiceScore >= 85
-                    ? '아주 훌륭합니다! 또렷하게 전달되고 있어요.'
-                    : '좋아요! 음절 끝을 조금만 더 힘있게 맺어보세요.'}
-                </p>
-              </div>
-            )}
+
 
             {/* Controls */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>

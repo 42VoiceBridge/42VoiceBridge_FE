@@ -3,7 +3,7 @@ import { Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const LoginPage: React.FC = () => {
-  const { login, setCurrentTab } = useApp();
+  const { login, loginWithKakao, setCurrentTab } = useApp();
   const [email, setEmail] = useState('chaeyeong@example.com');
   const [password, setPassword] = useState('password123');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -20,6 +20,18 @@ export const LoginPage: React.FC = () => {
       await login(email, password);
     } catch (err: any) {
       setErrorMsg(err.message || '로그인에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKakaoLogin = async () => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    try {
+      await loginWithKakao();
+    } catch (err: any) {
+      setErrorMsg(err.message || '카카오 로그인에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -146,6 +158,35 @@ export const LoginPage: React.FC = () => {
             <button className="vb-button" type="submit" disabled={isLoading} style={{ marginTop: '8px', width: '100%', justifyContent: 'center' }}>
               {isLoading ? '로그인 중...' : '로그인'}
               {!isLoading && <ArrowRight size={20} />}
+            </button>
+            
+            <button 
+              type="button" 
+              onClick={handleKakaoLogin}
+              disabled={isLoading} 
+              style={{ 
+                marginTop: '12px', 
+                width: '100%', 
+                justifyContent: 'center',
+                backgroundColor: '#FEE500',
+                color: 'rgba(0,0,0,0.85)',
+                border: 'none',
+                height: '56px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                fontSize: 'var(--text-lg)',
+                fontWeight: 600,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.7 : 1,
+                transition: 'opacity 0.2s ease',
+                gap: '8px'
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" clipRule="evenodd" d="M9 2C4.029 2 0 4.935 0 8.556C0 10.871 1.55 12.898 3.905 14.072C3.766 14.542 3.197 16.438 3.149 16.634C3.149 16.634 3.109 16.85 3.256 16.892C3.404 16.933 3.6 16.786 3.6 16.786C3.99 16.516 6.811 14.567 7.227 14.288C7.799 14.382 8.391 14.432 9 14.432C13.971 14.432 18 11.497 18 7.876C18 4.255 13.971 2 9 2Z" fill="rgba(0,0,0,0.85)"/>
+              </svg>
+              카카오로 시작하기
             </button>
           </form>
 
