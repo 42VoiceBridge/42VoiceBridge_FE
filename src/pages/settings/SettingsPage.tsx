@@ -36,7 +36,7 @@ export const SettingsPage: React.FC = () => {
             <span>음성 설정</span>
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}>
               <div>
                 <strong style={{ fontSize: 'var(--text-lg)', display: 'block' }}>AI 변환 음성 자동 출력</strong>
                 <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>변환 완료 시 자동으로 소리를 냅니다.</span>
@@ -47,7 +47,7 @@ export const SettingsPage: React.FC = () => {
                 onChange={(e) => setAutoTtsPlayback(e.target.checked)} 
                 style={{ width: '24px', height: '24px' }} 
               />
-            </div>
+            </label>
             
             <div>
               <strong style={{ fontSize: 'var(--text-lg)', display: 'block', marginBottom: '8px' }}>음성 출력 속도</strong>
@@ -100,13 +100,13 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', cursor: 'pointer' }}>
               <div>
                 <strong style={{ fontSize: 'var(--text-lg)', display: 'block' }}>고대비 모드 (색약 보정)</strong>
                 <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>화면의 색상 대비를 뚜렷하게 만듭니다.</span>
               </div>
               <input type="checkbox" checked={highContrast} onChange={(e) => setHighContrast(e.target.checked)} style={{ width: '24px', height: '24px' }} />
-            </div>
+            </label>
           </div>
         </section>
 

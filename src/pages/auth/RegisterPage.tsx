@@ -23,6 +23,10 @@ export const RegisterPage: React.FC = () => {
       setErrorMsg('비밀번호가 서로 일치하지 않습니다.');
       return;
     }
+    if (password.length < 8) {
+      setErrorMsg('비밀번호는 8자 이상 입력해주세요.');
+      return;
+    }
     
     setIsLoading(true);
     setErrorMsg('');
@@ -31,7 +35,11 @@ export const RegisterPage: React.FC = () => {
       // 회원가입 성공 시 자동 로그인 후 대시보드로 이동 (기존 Mock UX와 동일)
       await login(email, password);
     } catch (err: any) {
-      setErrorMsg(err.message || '회원가입에 실패했습니다.');
+      let msg = err.message || '회원가입에 실패했습니다.';
+      if (msg.includes('크기가 8에서') || msg.includes('2147483647')) {
+        msg = '비밀번호는 8자 이상 입력해주세요.';
+      }
+      setErrorMsg(msg);
     } finally {
       setIsLoading(false);
     }
@@ -205,7 +213,7 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             {errorMsg && (
-              <div style={{ color: '#d32f2f', fontSize: 'var(--text-sm)', fontWeight: 500, marginTop: '-12px' }}>
+              <div role="alert" style={{ color: '#d32f2f', fontSize: 'var(--text-sm)', fontWeight: 500, marginTop: '-12px' }}>
                 {errorMsg}
               </div>
             )}

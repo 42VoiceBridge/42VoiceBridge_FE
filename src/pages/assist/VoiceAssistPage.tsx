@@ -37,6 +37,32 @@ export const VoiceAssistPage: React.FC = () => {
   
   const recorderRef = useRef<AudioRecorderService | null>(null);
 
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (bigViewText) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      setTimeout(() => {
+        modalRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+      }, 0);
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setBigViewText(null);
+          setBigViewRecognitionId(null);
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        if (previousFocusRef.current && previousFocusRef.current.isConnected) {
+          previousFocusRef.current.focus();
+        }
+      };
+    }
+  }, [bigViewText]);
+
   const fetchRecent = async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) return;
@@ -257,7 +283,7 @@ export const VoiceAssistPage: React.FC = () => {
           marginBottom: '36px',
         }}
       >
-        <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '12px' }}>
+        <h2 style={{ fontSize: 'var(--text-2xl)', marginBottom: '12px' }} aria-live="polite">
           {isProcessing ? 'AI가 음성을 인식하고 있어요...' : isRecording ? '말씀을 듣고 있어요...' : '마이크를 켜고 편안하게 말씀하세요'}
         </h2>
         <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '24px' }}>
@@ -459,6 +485,7 @@ export const VoiceAssistPage: React.FC = () => {
       {/* FULLSCREEN / BIG TEXT MODAL FOR SENIORS & PARTNERS */}
       {bigViewText && (
         <div className="responsive-panel speech-overlay"
+          ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-label="대화 문장 크게 보기"

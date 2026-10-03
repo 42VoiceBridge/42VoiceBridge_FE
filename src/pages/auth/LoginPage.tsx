@@ -148,7 +148,7 @@ export const LoginPage: React.FC = () => {
             </div>
 
             {errorMsg && (
-              <div style={{ color: '#d32f2f', fontSize: 'var(--text-sm)', fontWeight: 500, marginTop: '-12px' }}>
+              <div role="alert" style={{ color: '#d32f2f', fontSize: 'var(--text-sm)', fontWeight: 500, marginTop: '-12px' }}>
                 {errorMsg}
               </div>
             )}

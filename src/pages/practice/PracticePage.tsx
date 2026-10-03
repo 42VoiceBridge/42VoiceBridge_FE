@@ -28,6 +28,11 @@ export const PracticePage: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
 
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+
+
   const loadRecommendations = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -76,6 +81,28 @@ export const PracticePage: React.FC = () => {
     setIsRecording(false);
     setHasRecorded(false);
   };
+
+  useEffect(() => {
+    if (activeSentence) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      setTimeout(() => {
+        modalRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+      }, 0);
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          closePracticeModal();
+        }
+      };
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        if (previousFocusRef.current && previousFocusRef.current.isConnected) {
+          previousFocusRef.current.focus();
+        }
+      };
+    }
+  }, [activeSentence]);
 
   const handleStartPracticeRecord = () => {
     setIsRecording(true);
@@ -160,6 +187,7 @@ export const PracticePage: React.FC = () => {
       {/* PRACTICE MODAL */}
       {activeSentence && (
         <div className="practice-overlay"
+          ref={modalRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="practice-dialog-title"
