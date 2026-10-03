@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config';
+import { authFetch } from './auth';
 
 export interface PersonalizationModelResponse {
   hasPersonalizedModel: boolean;
@@ -19,7 +20,7 @@ export interface PersonalizationModelApiResponse {
 export const getPersonalizationModelApi = async (
   accessToken: string
 ): Promise<PersonalizationModelApiResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/personalization/model`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/personalization/model`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,

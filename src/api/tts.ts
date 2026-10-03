@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config';
+import { authFetch } from './auth';
 
 export interface RequestTtsPayload {
   confirmationId: string;
@@ -34,7 +35,7 @@ export const requestTtsApi = async (
   accessToken: string,
   payload: RequestTtsPayload
 ): Promise<TtsRequestResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/tts`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/tts`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -61,7 +62,7 @@ export const getTtsStatusApi = async (
   accessToken: string,
   ttsId: string
 ): Promise<TtsStatusResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/tts/${ttsId}`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/tts/${ttsId}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,

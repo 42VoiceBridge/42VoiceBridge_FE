@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config';
+import { authFetch } from './auth';
 
 export interface RecommendationSentence {
   promptId: string;
@@ -22,7 +23,7 @@ export const getRecommendationsApi = async (
 ): Promise<RecommendationResponse> => {
   const payload = count !== undefined ? { count } : {};
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/users/me/recommendations`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/users/me/recommendations`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

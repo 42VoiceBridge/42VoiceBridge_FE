@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config';
+import { authFetch } from './auth';
 
 export interface DiagnosisSentenceDto {
   sentenceId: string;
@@ -75,7 +76,7 @@ export interface GetRecordingResultResponse {
 }
 
 export const createDiagnosisSessionApi = async (accessToken: string): Promise<StartDiagnosisSessionResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/diagnosis-sessions`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/diagnosis-sessions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ export const uploadDiagnosisRecordingApi = async (
   formData.append('sentenceId', sentenceId);
   formData.append('audioFile', audioBlob, 'recording.webm');
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/diagnosis-sessions/${sessionId}/recordings`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/diagnosis-sessions/${sessionId}/recordings`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -131,7 +132,7 @@ export const getDiagnosisSessionApi = async (
   accessToken: string,
   sessionId: string
 ): Promise<GetDiagnosisSessionResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/diagnosis-sessions/${sessionId}`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/diagnosis-sessions/${sessionId}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -154,7 +155,7 @@ export const getRecordingResultApi = async (
   sessionId: string,
   recordingId: string
 ): Promise<GetRecordingResultResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/diagnosis-sessions/${sessionId}/recordings/${recordingId}/result`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/diagnosis-sessions/${sessionId}/recordings/${recordingId}/result`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -201,7 +202,7 @@ export interface GetJamoErrorStatsResponse {
 export const getJamoErrorStatsApi = async (
   accessToken: string
 ): Promise<GetJamoErrorStatsResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/users/me/jamo-error-stats`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/users/me/jamo-error-stats`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,

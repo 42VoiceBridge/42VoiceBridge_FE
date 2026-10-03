@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './config';
+import { authFetch } from './auth';
 
 export interface RecognitionResponse {
   recognitionId: string;
@@ -36,7 +37,7 @@ export const getRecognitionsApi = async (
   page: number = 0,
   size: number = 20
 ): Promise<RecognitionHistoryResponse> => {
-  const response = await fetch(
+  const response = await authFetch(
     `${API_BASE_URL}/api/v1/recognitions?page=${page}&size=${size}`,
     {
       method: 'GET',
@@ -61,7 +62,7 @@ export const getRecognitionApi = async (
   accessToken: string,
   recognitionId: string
 ): Promise<RecognitionDetailResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/recognitions/${recognitionId}`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/recognitions/${recognitionId}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -86,7 +87,7 @@ export const createRecognitionApi = async (
   const formData = new FormData();
   formData.append('audioFile', audioBlob, 'voice-assist.webm');
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/recognitions`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/recognitions`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -129,7 +130,7 @@ export const confirmRecognitionApi = async (
   recognitionId: string,
   confirmedText: string
 ): Promise<ConfirmationDetailResponse> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/recognitions/${recognitionId}/confirm`, {
+  const response = await authFetch(`${API_BASE_URL}/api/v1/recognitions/${recognitionId}/confirm`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
