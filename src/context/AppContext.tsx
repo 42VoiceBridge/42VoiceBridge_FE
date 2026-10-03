@@ -34,7 +34,7 @@ interface AppContextType {
   currentTab: NavTab;
   setCurrentTab: (tab: NavTab) => void;
   goBack: () => void;
-  login: (email: string, password?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   loginWithKakao: () => Promise<void>;
   logout: () => void;
 
@@ -165,21 +165,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Restore login state from localStorage on mount
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
-    const savedEmail = localStorage.getItem('userEmail');
     if (token) {
-      if (token === 'mock-token') {
-        if (!savedEmail) return;
-        setUser({
-          id: 'user-01',
-          name: '홍길동',
-          email: savedEmail,
-          createdAt: '2026-08-01',
-        });
-        if (currentTab === 'login' || currentTab === 'register') {
-          setCurrentTab('dashboard');
-        }
-      } else {
-        getMeApi(token)
+      getMeApi(token)
           .then(res => {
             if (res.success && res.data) {
               setUser({
@@ -193,22 +180,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
             }
           })
-          .catch(err => {
-            console.error('Failed to restore user session:', err);
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('userEmail');
-            setUser(null);
-            setCurrentTab('login');
-          });
-      }
+        .catch(err => {
+          console.error('Failed to restore user session:', err);
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('userEmail');
+          setUser(null);
+          setCurrentTab('login');
+        });
     }
   }, []);
 
-  const login = async (email: string, password?: string) => {
-    if (password) {
-      // Real API login
-      const res = await loginApi(email, password);
+  const login = async (email: string, password: string) => {
+    // Real API login
+    const res = await loginApi(email, password);
       if (res.success && res.data) {
         localStorage.setItem('accessToken', res.data.accessToken);
         localStorage.setItem('refreshToken', res.data.refreshToken);
@@ -225,18 +210,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCurrentTab('dashboard');
         }
       }
-    } else {
-      // Mock / Demo login fallback (e.g. 체험하기)
-      localStorage.setItem('accessToken', 'mock-token');
-      localStorage.setItem('userEmail', email);
-      setUser({
-        id: 'user-01',
-        name: '홍길동',
-        email,
-        createdAt: '2026-08-01',
-      });
-      setCurrentTab('dashboard');
-    }
   };
 
   const loginWithKakao = async () => {

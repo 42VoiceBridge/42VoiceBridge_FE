@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const LoginPage: React.FC = () => {
@@ -37,9 +37,7 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleDemoLogin = async () => {
-    await login('chaeyeong@example.com');
-  };
+
 
   return (
     <div className="vb-theme vb-page" style={{ minHeight: 'calc(100vh - 96px)', display: 'flex', alignItems: 'center' }}>
@@ -203,17 +201,7 @@ export const LoginPage: React.FC = () => {
               </button>
             </div>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: 'var(--text-base)' }}>
-              <span className="vb-muted">테스트 계정으로</span>
-              <button 
-                type="button" 
-                className="vb-text-link" 
-                onClick={handleDemoLogin}
-                style={{ minHeight: 'auto', padding: 0 }}
-              >
-                체험하기<Sparkles size={18} />
-              </button>
-            </div>
+
           </div>
         </div>
       </div>

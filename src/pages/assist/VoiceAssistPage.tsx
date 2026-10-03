@@ -39,7 +39,7 @@ export const VoiceAssistPage: React.FC = () => {
 
   const fetchRecent = async () => {
     const token = localStorage.getItem('accessToken');
-    if (!token || token === 'mock-token') return;
+    if (!token) return;
     try {
       const res = await getRecognitionsApi(token, 0, 10);
       if (res.success && res.data) {

@@ -19,7 +19,7 @@ export const DashboardPage = () => {
   useEffect(() => {
     const fetchRecent = async () => {
       const token = localStorage.getItem('accessToken');
-      if (!token || token === 'mock-token') return;
+      if (!token) return;
       
       try {
         const res = await getRecognitionsApi(token, 0, 2);
