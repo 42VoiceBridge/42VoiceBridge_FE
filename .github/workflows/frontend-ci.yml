@@ -1,0 +1,96 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run build
+        run: npm run build
+
+  publish:
+    name: Publish and Dispatch
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required variables and secrets
+        env:
+          FE_IMAGE_REPOSITORY: ${{ vars.FE_IMAGE_REPOSITORY }}
+          INFRA_DISPATCH_TOKEN: ${{ secrets.INFRA_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$FE_IMAGE_REPOSITORY" ]; then
+            echo "Error: FE_IMAGE_REPOSITORY repository variable is not configured."
+            exit 1
+          fi
+          if [ -z "$INFRA_DISPATCH_TOKEN" ]; then
+            echo "Error: INFRA_DISPATCH_TOKEN secret is not configured."
+            exit 1
+          fi
+          if [ "${#GITHUB_SHA}" -ne 40 ]; then
+            echo "Error: GITHUB_SHA must be exactly 40 characters long."
+            exit 1
+          fi
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg VITE_API_URL="${{ vars.VITE_API_URL }}" \
+            --build-arg VITE_KAKAO_JAVASCRIPT_KEY="${{ vars.VITE_KAKAO_JAVASCRIPT_KEY }}" \
+            -t ${{ vars.FE_IMAGE_REPOSITORY }}:sha-${{ github.sha }} \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ vars.FE_IMAGE_REPOSITORY }}:sha-${{ github.sha }}
+
+      - name: Dispatch Infra deployment
+        run: |
+          curl --fail-with-body --silent --show-error -X POST https://api.github.com/repos/42VoiceBridge/42VoiceBridge_Infra/dispatches \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.INFRA_DISPATCH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -d '{
+              "event_type": "deploy-frontend",
+              "client_payload": {
+                "ref": "refs/heads/main",
+                "sha": "${{ github.sha }}"
+              }
+            }'
