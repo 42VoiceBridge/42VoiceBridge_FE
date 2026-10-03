@@ -45,10 +45,13 @@ export const requestTtsApi = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    let errMsg = 'TTS 요청 중 서버 오류가 발생했습니다.';
     if (errorData?.error?.message) {
-      throw new Error(errorData.error.message);
+      errMsg = errorData.error.message;
     }
-    throw new Error('TTS 요청 중 서버 오류가 발생했습니다.');
+    const err: any = new Error(errMsg);
+    err.code = response.status.toString();
+    throw err;
   }
 
   return response.json();
@@ -67,10 +70,13 @@ export const getTtsStatusApi = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    let errMsg = 'TTS 상태 조회 중 서버 오류가 발생했습니다.';
     if (errorData?.error?.message) {
-      throw new Error(errorData.error.message);
+      errMsg = errorData.error.message;
     }
-    throw new Error('TTS 상태 조회 중 서버 오류가 발생했습니다.');
+    const err: any = new Error(errMsg);
+    err.code = response.status.toString();
+    throw err;
   }
 
   return response.json();

@@ -23,6 +23,7 @@ export const VoiceAssistPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bigViewText, setBigViewText] = useState<string | null>(null);
+  const [bigViewRecognitionId, setBigViewRecognitionId] = useState<string | null>(null);
   const [recentRecognitions, setRecentRecognitions] = useState<RecognitionResponse[]>([]);
   const [activeRecognitionId, setActiveRecognitionId] = useState<string | null>(null);
   const [editableText, setEditableText] = useState<string>('');
@@ -32,6 +33,7 @@ export const VoiceAssistPage: React.FC = () => {
   const [confirmedRecognitions, setConfirmedRecognitions] = useState<Record<string, ConfirmedData>>({});
   
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const ttsGenerationRef = useRef(0);
   
   const recorderRef = useRef<AudioRecorderService | null>(null);
 
@@ -51,6 +53,7 @@ export const VoiceAssistPage: React.FC = () => {
   useEffect(() => {
     fetchRecent();
     return () => {
+      ttsGenerationRef.current++;
       if (recorderRef.current) {
         recorderRef.current.stopRecording().catch(() => {});
       }
@@ -163,63 +166,77 @@ export const VoiceAssistPage: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleSpeakAloud = async (recognitionId: string, text: string) => {
+  const handleSpeakAloud = async (recognitionId: string) => {
     if (speakingId) return;
 
     const confirmed = confirmedRecognitions[recognitionId];
-    if (confirmed && confirmed.confirmationId) {
-      setSpeakingId(recognitionId);
-      try {
-        const token = localStorage.getItem('accessToken');
-        if (!token) throw new Error('인증이 필요합니다.');
+    if (!confirmed || !confirmed.confirmationId) {
+      return;
+    }
 
-        const reqPayload = {
-          confirmationId: confirmed.confirmationId,
-          idempotencyKey: crypto.randomUUID()
-        };
-        const reqRes = await requestTtsApi(token, reqPayload);
-        if (!reqRes.success || !reqRes.data) throw new Error('TTS 요청 실패');
+    const requestGeneration = ++ttsGenerationRef.current;
+    const textToSpeak = confirmed.confirmedText;
 
-        const ttsId = reqRes.data.ttsId;
+    setSpeakingId(recognitionId);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('인증이 필요합니다.');
+
+      const reqPayload = {
+        confirmationId: confirmed.confirmationId,
+        idempotencyKey: crypto.randomUUID()
+      };
+      const reqRes = await requestTtsApi(token, reqPayload);
+      if (requestGeneration !== ttsGenerationRef.current) return;
+      if (!reqRes.success || !reqRes.data) throw new Error('TTS 요청 실패');
+
+      const ttsId = reqRes.data.ttsId;
+      
+      let audioUrl: string | null = null;
+      let attempts = 0;
+      const maxAttempts = 15;
+      
+      while (attempts < maxAttempts) {
+        const statusRes = await getTtsStatusApi(token, ttsId);
+        if (requestGeneration !== ttsGenerationRef.current) return;
         
-        let audioUrl: string | null = null;
-        let attempts = 0;
-        const maxAttempts = 15;
-        
-        while (attempts < maxAttempts) {
-          const statusRes = await getTtsStatusApi(token, ttsId);
-          if (statusRes.success && statusRes.data) {
-            if (statusRes.data.status === 'COMPLETED') {
-              audioUrl = statusRes.data.audioUrl;
-              break;
-            } else if (statusRes.data.status === 'FAILED') {
-              throw new Error('TTS 생성 실패 (FAILED)');
-            }
+        if (statusRes.success && statusRes.data) {
+          if (statusRes.data.status === 'COMPLETED') {
+            audioUrl = statusRes.data.audioUrl;
+            break;
+          } else if (statusRes.data.status === 'FAILED') {
+            throw new Error('TTS_FAILED');
           }
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          attempts++;
         }
-
-        if (!audioUrl) {
-          throw new Error('TTS 대기 시간 초과 또는 URL 없음');
-        }
-
-        // NOTE: LocalFileStorageAdapter does not serve the HTTP route for audioUrl yet.
-        // For safety, we report this and fallback to Browser SpeechSynthesis for now.
-        console.warn('Backend에서 audioUrl serving 설정 확인 필요:', audioUrl);
-        throw new Error('Backend에서 audioUrl serving 설정 확인 필요');
-        
-      } catch (err) {
-        console.warn('Backend TTS failed, falling back to Browser SpeechSynthesis', err);
-        await speakText(text, 0.9);
-      } finally {
-        setSpeakingId(null);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (requestGeneration !== ttsGenerationRef.current) return;
+        attempts++;
       }
-    } else {
-      setSpeakingId(recognitionId);
-      try {
-        await speakText(text, 0.9);
-      } finally {
+
+      if (!audioUrl) {
+        throw new Error('TTS 대기 시간 초과 또는 URL 없음');
+      }
+
+      // NOTE: LocalFileStorageAdapter does not serve the HTTP route for audioUrl yet.
+      // For safety, we report this and fallback to Browser SpeechSynthesis for now.
+      console.warn('Backend에서 audioUrl serving 설정 확인 필요:', audioUrl);
+      throw new Error('Backend에서 audioUrl serving 설정 확인 필요');
+      
+    } catch (err: any) {
+      if (requestGeneration !== ttsGenerationRef.current) return;
+      
+      const code = err.code ? parseInt(err.code, 10) : 0;
+      if (code >= 400 && code < 500) {
+        alert('음성 출력 요청이 거절되었습니다.');
+        console.error('TTS 4xx Error:', err);
+      } else if (err.message === 'TTS_FAILED') {
+        alert('TTS 음성 생성에 실패했습니다.');
+      } else {
+        console.warn('Backend TTS failed, falling back to Browser SpeechSynthesis', err);
+        await speakText(textToSpeak, 0.9);
+      }
+    } finally {
+      if (requestGeneration === ttsGenerationRef.current) {
         setSpeakingId(null);
       }
     }
@@ -407,7 +424,8 @@ export const VoiceAssistPage: React.FC = () => {
                   variant="secondary"
                   size="normal"
                   icon={<Volume2 size={20} />}
-                  onClick={() => handleSpeakAloud(msg.recognitionId, confirmedRecognitions[msg.recognitionId] ? confirmedRecognitions[msg.recognitionId].confirmedText : msg.recognizedText)}
+                  onClick={() => handleSpeakAloud(msg.recognitionId)}
+                  disabled={!confirmedRecognitions[msg.recognitionId]}
                 >
                   {speakingId === msg.recognitionId ? '들려주는 중...' : '상대방에게 또렷하게 들려주기'}
                 </SeniorButton>
@@ -416,7 +434,10 @@ export const VoiceAssistPage: React.FC = () => {
                   variant="outline"
                   size="normal"
                   icon={<Maximize2 size={20} />}
-                  onClick={() => setBigViewText(confirmedRecognitions[msg.recognitionId] ? confirmedRecognitions[msg.recognitionId].confirmedText : msg.recognizedText)}
+                  onClick={() => {
+                    setBigViewText(confirmedRecognitions[msg.recognitionId] ? confirmedRecognitions[msg.recognitionId].confirmedText : msg.recognizedText);
+                    setBigViewRecognitionId(msg.recognitionId);
+                  }}
                 >
                   화면 가득 크게 보여주기
                 </SeniorButton>
@@ -455,7 +476,10 @@ export const VoiceAssistPage: React.FC = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
-              onClick={() => setBigViewText(null)}
+              onClick={() => {
+                setBigViewText(null);
+                setBigViewRecognitionId(null);
+              }}
               style={{
                 color: '#ffffff',
                 backgroundColor: 'rgba(255,255,255,0.15)',
@@ -490,18 +514,23 @@ export const VoiceAssistPage: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexDirection: 'column', alignItems: 'center' }}>
             <SeniorButton
               variant="secondary"
               size="large"
               icon={<Volume2 size={24} />}
               onClick={() => {
-                setSpeakingId('big-view');
-                speakText(bigViewText, 0.9).finally(() => setSpeakingId(null));
+                if (bigViewRecognitionId) {
+                  handleSpeakAloud(bigViewRecognitionId);
+                }
               }}
+              disabled={!bigViewRecognitionId || !confirmedRecognitions[bigViewRecognitionId]}
             >
-              {speakingId === 'big-view' ? '듣는 중...' : '소리로 읽어주기'}
+              {speakingId === bigViewRecognitionId ? '듣는 중...' : '소리로 읽어주기'}
             </SeniorButton>
+            {(!bigViewRecognitionId || !confirmedRecognitions[bigViewRecognitionId]) && (
+              <span style={{ fontSize: 'var(--text-sm)', color: '#94a3b8' }}>문장을 확정하면 음성으로 들려줄 수 있어요.</span>
+            )}
           </div>
         </div>
       )}
