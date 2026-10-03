@@ -1,17 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type {
   User,
-  DiagnosisResult,
-  PracticeSentence,
-  PersonalizationStatus,
   FontSizeLevel,
 } from '../types';
-import {
-  initialDiagnosisResult,
-  initialHistoryResults,
-  practiceSentences as defaultPracticeSentences,
-  initialPersonalizationStatus,
-} from '../utils/mockData';
 
 export type NavTab =
   | 'dashboard'
@@ -57,19 +48,7 @@ interface AppContextType {
   speechRate: number;
   setSpeechRate: (val: number) => void;
 
-  // Diagnosis & History
-  latestDiagnosis: DiagnosisResult;
-  historyResults: DiagnosisResult[];
-  addDiagnosisResult: (result: DiagnosisResult) => void;
 
-  // Practice
-  practiceList: PracticeSentence[];
-  updatePracticeScore: (id: string, score: number) => void;
-
-  // Personalization
-  personalization: PersonalizationStatus;
-  addVoiceSample: () => void;
-  triggerModelTraining: () => void;
 
 }
 
@@ -105,10 +84,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? parseFloat(saved) : 1.0;
   });
 
-  const [historyResults, setHistoryResults] = useState<DiagnosisResult[]>(initialHistoryResults);
-  const [latestDiagnosis, setLatestDiagnosis] = useState<DiagnosisResult>(initialDiagnosisResult);
-  const [practiceList, setPracticeList] = useState<PracticeSentence[]>(defaultPracticeSentences);
-  const [personalization, setPersonalization] = useState<PersonalizationStatus>(initialPersonalizationStatus);
+
 
   // Sync currentTab
   useEffect(() => {
@@ -291,45 +267,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentTab('login');
   };
 
-  const addDiagnosisResult = (result: DiagnosisResult) => {
-    setLatestDiagnosis(result);
-    setHistoryResults(prev => [result, ...prev]);
-  };
 
-  const updatePracticeScore = (id: string, score: number) => {
-    setPracticeList(prev =>
-      prev.map(item => (item.id === id ? { ...item, lastScore: score } : item))
-    );
-  };
-
-  const addVoiceSample = () => {
-    setPersonalization(prev => {
-      const nextCount = Math.min(prev.targetCount, prev.collectedCount + 1);
-      const isComplete = nextCount >= prev.targetCount;
-      return {
-        ...prev,
-        collectedCount: nextCount,
-        status: isComplete ? 'training' : 'collecting',
-        personalizedAccuracy: isComplete ? 95 : prev.personalizedAccuracy,
-      };
-    });
-  };
-
-  const triggerModelTraining = () => {
-    setPersonalization(prev => ({
-      ...prev,
-      status: 'training',
-    }));
-
-    setTimeout(() => {
-      setPersonalization(prev => ({
-        ...prev,
-        status: 'completed',
-        lastTrainedAt: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-        personalizedAccuracy: 96,
-      }));
-    }, 2500);
-  };
 
 
   return (
@@ -350,14 +288,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAutoTtsPlayback,
         speechRate,
         setSpeechRate,
-        latestDiagnosis,
-        historyResults,
-        addDiagnosisResult,
-        practiceList,
-        updatePracticeScore,
-        personalization,
-        addVoiceSample,
-        triggerModelTraining,
+
       }}
     >
       {children}
