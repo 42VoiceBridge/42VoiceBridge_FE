@@ -171,3 +171,51 @@ export const getRecordingResultApi = async (
 
   return response.json();
 };
+
+export interface TokenDto {
+  token: string;
+  position: 'INITIAL' | 'MEDIAL' | 'FINAL';
+  errors: number;
+  sampleCount: number;
+  errorRate: number | null;
+  status: 'OK' | 'INSUFFICIENT_DATA';
+}
+
+export interface JamoErrorStatsResponse {
+  metricVersion: string;
+  minSupport: number;
+  sessionsUsed: number;
+  pairsUsed: number;
+  tokens: TokenDto[];
+}
+
+export interface GetJamoErrorStatsResponse {
+  success: boolean;
+  data?: JamoErrorStatsResponse;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+export const getJamoErrorStatsApi = async (
+  accessToken: string
+): Promise<GetJamoErrorStatsResponse> => {
+  const response = await fetch(`${API_BASE_URL}/api/v1/users/me/jamo-error-stats`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    if (errorData?.error?.message) {
+      throw new Error(errorData.error.message);
+    }
+    throw new Error('자모 오류 통계 조회 중 오류가 발생했습니다.');
+  }
+
+  return response.json();
+};
+

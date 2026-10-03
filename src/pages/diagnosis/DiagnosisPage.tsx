@@ -17,12 +17,14 @@ import {
   createDiagnosisSessionApi, 
   uploadDiagnosisRecordingApi,
   getDiagnosisSessionApi,
-  getRecordingResultApi
+  getRecordingResultApi,
+  getJamoErrorStatsApi
 } from '../../api/diagnosis';
 import type { 
   DiagnosisSentenceDto,
   DiagnosisRecordingResult,
-  DiffHighlight
+  DiffHighlight,
+  JamoErrorStatsResponse
 } from '../../api/diagnosis';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
@@ -44,6 +46,12 @@ export const DiagnosisPage: React.FC = () => {
   const [recordingIds, setRecordingIds] = useState<Record<string, string>>({});
   // Final results
   const [actualResults, setActualResults] = useState<DiagnosisRecordingResult[]>([]);
+
+  // Jamo Error Stats
+  const [jamoStats, setJamoStats] = useState<JamoErrorStatsResponse | null>(null);
+  const [jamoLoading, setJamoLoading] = useState(false);
+  const [jamoError, setJamoError] = useState(false);
+  const jamoFetchedRef = useRef(false);
 
   const recorderRef = useRef<AudioRecorderService | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -247,6 +255,32 @@ export const DiagnosisPage: React.FC = () => {
       alert('결과를 불러오는 중 오류가 발생했습니다.');
     }
   };
+
+  const fetchJamoStats = async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+    setJamoLoading(true);
+    setJamoError(false);
+    try {
+      const res = await getJamoErrorStatsApi(token);
+      if (res.success && res.data) {
+        setJamoStats(res.data);
+      } else {
+        setJamoError(true);
+      }
+    } catch (e) {
+      setJamoError(true);
+    } finally {
+      setJamoLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 'result' && !jamoFetchedRef.current) {
+      jamoFetchedRef.current = true;
+      fetchJamoStats();
+    }
+  }, [step]);
 
   // Format seconds to mm:ss
   const formatTime = (seconds: number) => {
@@ -654,12 +688,109 @@ export const DiagnosisPage: React.FC = () => {
             ))}
           </div>
 
+          {/* JAMO ERROR STATS SECTION */}
+          <div style={{
+            marginTop: '40px',
+            marginBottom: '40px',
+            paddingTop: '32px',
+            borderTop: '2px dashed var(--color-border)'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, marginBottom: '8px' }}>
+                누적 발음 분석
+              </h2>
+              <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
+                지금까지의 발음 진단을 바탕으로<br />자주 어려워한 발음을 보여드려요.
+              </p>
+            </div>
+
+            {jamoLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-text-muted)' }}>
+                누적 발음 분석을 불러오는 중입니다...
+              </div>
+            ) : jamoError ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--border-radius-md)' }}>
+                <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-danger)', marginBottom: '16px', fontWeight: 600 }}>
+                  누적 발음 분석을 불러오지 못했습니다.
+                </p>
+                <SeniorButton variant="outline" size="normal" onClick={fetchJamoStats}>다시 불러오기</SeniorButton>
+              </div>
+            ) : !jamoStats || jamoStats.sessionsUsed === 0 || !jamoStats.tokens || jamoStats.tokens.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--border-radius-md)', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+                아직 누적된 발음 데이터가 충분하지 않아요.<br />
+                진단을 계속 진행하시면 발음 분석 결과를 확인할 수 있어요.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {jamoStats.tokens.map((token, idx) => {
+                  const positionMap: Record<string, string> = { INITIAL: '초성', MEDIAL: '중성', FINAL: '종성' };
+                  const posText = positionMap[token.position] || token.position;
+                  const hasSufficientData = token.status === 'OK' && token.errorRate !== null;
+
+                  return (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '24px',
+                      backgroundColor: 'var(--color-bg-surface)',
+                      borderRadius: 'var(--border-radius-md)',
+                      border: '1px solid var(--color-border)',
+                      flexWrap: 'wrap',
+                      gap: '16px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <div style={{
+                          width: '64px',
+                          height: '64px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--color-primary-light)',
+                          color: 'var(--color-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 'var(--text-3xl)',
+                          fontWeight: 800
+                        }}>
+                          {token.token}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', fontWeight: 700, marginBottom: '4px' }}>
+                            {posText}
+                          </div>
+                          <div style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-body)' }}>
+                            오류 {token.errors}회 / 분석 표본 {token.sampleCount}회
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ textAlign: 'right' }}>
+                        {hasSufficientData ? (
+                          <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, color: 'var(--color-danger)' }}>
+                            오류율 {Math.round((token.errorRate as number) * 100)}%
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', maxWidth: '240px', lineHeight: 1.5 }}>
+                            분석을 위해 조금 더 많은<br/>발음 데이터가 필요해요.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
             <SeniorButton
               variant="outline"
               size="large"
               icon={<RotateCcw size={22} />}
-              onClick={() => setStep('intro')}
+              onClick={() => {
+                setStep('intro');
+                jamoFetchedRef.current = false;
+              }}
             >
               다시 진단하기
             </SeniorButton>
