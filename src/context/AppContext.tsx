@@ -278,7 +278,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     kakao.Auth.authorize({
-      redirectUri: 'http://localhost:5173/auth/kakao/callback'
+      redirectUri: `${window.location.origin}/auth/kakao/callback`
     });
   };
 
