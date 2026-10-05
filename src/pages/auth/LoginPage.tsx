@@ -1,14 +1,37 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const LoginPage: React.FC = () => {
   const { login, loginWithKakao, setCurrentTab } = useApp();
   const [email, setEmail] = useState('chaeyeong@example.com');
   const [password, setPassword] = useState('password123');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(() => {
+    const kakaoError = sessionStorage.getItem('kakaoLoginError');
+    if (kakaoError) sessionStorage.removeItem('kakaoLoginError');
+    return kakaoError;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(() => {
+    if (sessionStorage.getItem('signupSuccess')) {
+      sessionStorage.removeItem('signupSuccess');
+      return '회원가입이 완료되었습니다. 로그인해주세요.';
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handleKakaoError = (event: Event) => {
+      const message = (event as CustomEvent<string>).detail;
+      setSuccessMsg(null);
+      setErrorMsg(message);
+      sessionStorage.removeItem('kakaoLoginError');
+    };
+    window.addEventListener('auth:kakao-error', handleKakaoError);
+    return () => window.removeEventListener('auth:kakao-error', handleKakaoError);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,10 +39,16 @@ export const LoginPage: React.FC = () => {
     
     setIsLoading(true);
     setErrorMsg(null);
+    setSuccessMsg(null);
     try {
       await login(email, password);
     } catch (err: any) {
-      setErrorMsg(err.message || '로그인에 실패했습니다.');
+      const errorMessage = typeof err?.message === 'string' ? err.message : '';
+      let msg = '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      if (errorMessage.includes('올바르지 않습니다') || errorMessage.includes('401')) {
+        msg = '이메일 또는 비밀번호를 다시 확인해주세요.';
+      }
+      setErrorMsg(msg);
     } finally {
       setIsLoading(false);
     }
@@ -30,8 +59,9 @@ export const LoginPage: React.FC = () => {
     setErrorMsg(null);
     try {
       await loginWithKakao();
-    } catch (err: any) {
-      setErrorMsg(err.message || '카카오 로그인에 실패했습니다.');
+    } catch (err) {
+      console.error('Failed to start Kakao login:', err);
+      setErrorMsg('카카오 로그인을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -147,9 +177,29 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
+            {successMsg && (
+              <div
+                role="alert"
+                aria-live="polite"
+                style={{
+                  backgroundColor: 'rgba(76, 175, 80, 0.08)',
+                  border: '1px solid rgba(76, 175, 80, 0.3)',
+                  color: 'var(--vb-green)',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 500,
+                  marginTop: '-12px',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  lineHeight: '1.5'
+                }}
+              >
+                {successMsg}
+              </div>
+            )}
+
             {errorMsg && (
-              <div role="alert" style={{ color: '#d32f2f', fontSize: 'var(--text-sm)', fontWeight: 500, marginTop: '-12px' }}>
-                {errorMsg}
+              <div style={{ marginTop: '-12px' }}>
+                <ErrorMessage message={errorMsg} />
               </div>
             )}
 

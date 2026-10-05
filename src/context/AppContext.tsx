@@ -119,8 +119,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         window.history.replaceState({}, document.title, '/');
 
         if (error) {
-          alert('카카오 로그인 중 오류가 발생하거나 취소되었습니다.');
+          const message = '카카오 로그인 중 오류가 발생하거나 취소되었습니다.';
+          sessionStorage.setItem('kakaoLoginError', message);
           setCurrentTab('login');
+          window.dispatchEvent(new CustomEvent('auth:kakao-error', { detail: message }));
           return;
         }
 
@@ -152,8 +154,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               throw new Error('VoiceBridge 로그인에 실패했습니다.');
             }
           } catch (err: any) {
-            alert(err.message || '카카오 로그인 처리 중 오류가 발생했습니다.');
+            console.error('Kakao login callback failed:', err);
+            const message = '카카오 로그인 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+            sessionStorage.setItem('kakaoLoginError', message);
             setCurrentTab('login');
+            window.dispatchEvent(new CustomEvent('auth:kakao-error', { detail: message }));
           }
         }
       }

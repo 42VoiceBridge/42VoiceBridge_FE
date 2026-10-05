@@ -3,8 +3,7 @@ import {
   Mic,
   Square,
   X,
-  RefreshCw,
-  AlertCircle
+  RefreshCw
 } from 'lucide-react';
 
 import { useApp } from '../../context/AppContext';
@@ -14,6 +13,7 @@ import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { getRecommendationsApi } from '../../api/recommendation';
 import type { RecommendationSentence } from '../../api/recommendation';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const PracticePage: React.FC = () => {
   const { setCurrentTab } = useApp();
@@ -27,6 +27,7 @@ export const PracticePage: React.FC = () => {
   // Practice Modal State
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
+  const [practiceError, setPracticeError] = useState<string | null>(null);
 
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -54,9 +55,9 @@ export const PracticePage: React.FC = () => {
       } else {
         throw new Error('응답 형식이 올바르지 않습니다.');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || '문장을 불러오는 데 실패했습니다.');
+      setError('추천 문장을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setLoading(false);
     }
@@ -74,12 +75,14 @@ export const PracticePage: React.FC = () => {
     setActiveSentence(sentence);
     setIsRecording(false);
     setHasRecorded(false);
+    setPracticeError(null);
   };
 
   const closePracticeModal = () => {
     setActiveSentence(null);
     setIsRecording(false);
     setHasRecorded(false);
+    setPracticeError(null);
   };
 
   useEffect(() => {
@@ -105,13 +108,14 @@ export const PracticePage: React.FC = () => {
   }, [activeSentence]);
 
   const handleStartPracticeRecord = () => {
+    setPracticeError(null);
     setIsRecording(true);
     setHasRecorded(false);
   };
 
   const handleStopPracticeRecord = () => {
     setIsRecording(false);
-    alert('발음 관리 서버(백엔드) 연동 준비 중입니다.');
+    setPracticeError('현재 녹음 평가 기능을 준비하고 있습니다.');
   };
 
   return (
@@ -132,13 +136,14 @@ export const PracticePage: React.FC = () => {
       </div>
 
       {error ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-danger)', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--border-radius-lg)', border: '1px solid var(--color-danger)' }}>
-          <AlertCircle size={40} style={{ margin: '0 auto 16px', display: 'block' }} />
-          <p style={{ fontSize: 'var(--text-lg)', fontWeight: 700, marginBottom: '16px' }}>{error}</p>
-          <SeniorButton variant="primary" onClick={loadRecommendations}>다시 시도</SeniorButton>
-          {error.includes('로그인') && (
-            <SeniorButton variant="secondary" onClick={() => setCurrentTab('login')} style={{ marginLeft: '12px' }}>로그인하러 가기</SeniorButton>
-          )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+          <ErrorMessage message={error} />
+          <div>
+            <SeniorButton variant="primary" onClick={loadRecommendations}>다시 시도</SeniorButton>
+            {error.includes('로그인') && (
+              <SeniorButton variant="secondary" onClick={() => setCurrentTab('login')} style={{ marginLeft: '12px' }}>로그인하러 가기</SeniorButton>
+            )}
+          </div>
         </div>
       ) : loading && sentences.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-text-muted)' }}>
@@ -258,6 +263,12 @@ export const PracticePage: React.FC = () => {
             <div style={{ marginBottom: '24px' }}>
               <AudioVisualizer isRecording={isRecording} height={70} />
             </div>
+
+            {practiceError && (
+              <div style={{ marginBottom: '24px' }}>
+                <ErrorMessage message={practiceError} />
+              </div>
+            )}
 
 
 

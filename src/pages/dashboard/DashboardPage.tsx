@@ -8,6 +8,7 @@ import { VoiceGraphic } from '../../components/home/VoiceGraphic';
 import { Reveal } from '../../components/home/Reveal';
 import { getRecognitionsApi } from '../../api/recognition';
 import type { RecognitionResponse } from '../../api/recognition';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const DashboardPage = () => {
   const { user, setCurrentTab } = useApp();
@@ -15,6 +16,8 @@ export const DashboardPage = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bigViewText, setBigViewText] = useState<string | null>(null);
   const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [recentError, setRecentError] = useState<string | null>(null);
+  const [speechError, setSpeechError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRecent = async () => {
@@ -22,12 +25,14 @@ export const DashboardPage = () => {
       if (!token) return;
       
       try {
+        setRecentError(null);
         const res = await getRecognitionsApi(token, 0, 2);
         if (res.success && res.data) {
           setRecentRecognitions(res.data.content);
         }
       } catch (err) {
         console.error('Failed to load recent recognitions:', err);
+        setRecentError('최근 대화 기록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
       }
     };
     fetchRecent();
@@ -41,11 +46,12 @@ export const DashboardPage = () => {
 
   const handleSpeakAloud = async (text: string) => {
     if (speakingId) return;
+    setSpeechError(null);
     try {
       await speakText(text, 0.9);
     } catch (error: any) {
       console.error('TTS error:', error);
-      alert('음성 재생 기능 준비 중입니다.');
+      setSpeechError('음성을 재생하지 못했습니다. 다시 시도해주세요.');
     } finally {
       setSpeakingId(null);
     }
@@ -106,6 +112,10 @@ export const DashboardPage = () => {
           </div>
         </Reveal>
       </section>
+
+      {(recentError || speechError) && <div className="vb-container" style={{ marginBottom: '24px' }}>
+        <ErrorMessage message={speechError || recentError!} />
+      </div>}
 
       {recentRecognitions.length > 0 && <section className="vb-recent vb-container" aria-label="최근 대화 결과">
         <details><summary><span>{user?.name}님의 최근 대화</span><span className="vb-recent-hint">대화 결과 보기 <ArrowDown size={20} /></span></summary>

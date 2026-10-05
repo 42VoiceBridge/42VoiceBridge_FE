@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { signupApi } from '../../api/auth';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const RegisterPage: React.FC = () => {
-  const { login, setCurrentTab } = useApp();
+  const { setCurrentTab } = useApp();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,11 +33,24 @@ export const RegisterPage: React.FC = () => {
     setErrorMsg('');
     try {
       await signupApi(email, password, name);
-      // 회원가입 성공 시 자동 로그인 후 대시보드로 이동 (기존 Mock UX와 동일)
-      await login(email, password);
+      // 회원가입 성공 시 자동 로그인하지 않고 로그인 화면으로 이동
+      sessionStorage.setItem('signupSuccess', 'true');
+      setCurrentTab('login');
     } catch (err: any) {
-      let msg = err.message || '회원가입에 실패했습니다.';
-      if (msg.includes('크기가 8에서') || msg.includes('2147483647')) {
+      const errorMessage = typeof err?.message === 'string' ? err.message : '';
+      const normalizedMessage = errorMessage.toLowerCase();
+      let msg = '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+
+      if (
+        normalizedMessage.includes('duplicate_email') ||
+        normalizedMessage.includes('email_already') ||
+        normalizedMessage.includes('duplicate email') ||
+        normalizedMessage.includes('email already') ||
+        ((errorMessage.includes('이메일') || normalizedMessage.includes('email')) &&
+          (errorMessage.includes('중복') || errorMessage.includes('이미') || errorMessage.includes('사용 중')))
+      ) {
+        msg = '이미 사용 중인 이메일입니다.';
+      } else if (errorMessage.includes('크기가 8에서') || errorMessage.includes('2147483647')) {
         msg = '비밀번호는 8자 이상 입력해주세요.';
       }
       setErrorMsg(msg);
@@ -213,8 +227,8 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             {errorMsg && (
-              <div role="alert" style={{ color: '#d32f2f', fontSize: 'var(--text-sm)', fontWeight: 500, marginTop: '-12px' }}>
-                {errorMsg}
+              <div style={{ marginTop: '-12px' }}>
+                <ErrorMessage message={errorMsg} />
               </div>
             )}
 

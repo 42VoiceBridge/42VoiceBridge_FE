@@ -73,7 +73,7 @@ jobs:
         run: |
           docker build \
             --build-arg VITE_API_URL="${{ vars.VITE_API_URL }}" \
-            --build-arg VITE_KAKAO_JAVASCRIPT_KEY="${{ vars.VITE_KAKAO_JAVASCRIPT_KEY }}" \
+            --build-arg VITE_KAKAO_JAVASCRIPT_KEY="${{ secrets.VITE_KAKAO_JAVASCRIPT_KEY }}" \
             -t ${{ vars.FE_IMAGE_REPOSITORY }}:sha-${{ github.sha }} \
             .
 

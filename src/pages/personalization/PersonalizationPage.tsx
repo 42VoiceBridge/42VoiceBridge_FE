@@ -5,6 +5,7 @@ import { SeniorButton } from '../../components/common/SeniorButton';
 import type { PersonalizationModelResponse } from '../../api/personalization';
 import { getPersonalizationModelApi } from '../../api/personalization';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const PersonalizationPage: React.FC = () => {
   const { user } = useApp();
@@ -27,8 +28,9 @@ export const PersonalizationPage: React.FC = () => {
         } else {
           throw new Error(res.error?.message || '개인화 모델 정보를 불러오지 못했습니다.');
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        console.error('Failed to load personalization model:', err);
+        setError('AI 학습 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
       } finally {
         setLoading(false);
       }
@@ -54,9 +56,7 @@ export const PersonalizationPage: React.FC = () => {
           데이터를 불러오는 중입니다...
         </div>
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-danger)' }}>
-          {error}
-        </div>
+        <ErrorMessage message={error} />
       ) : model && (
         <>
           {/* 2-Column Dashboard Cards */}

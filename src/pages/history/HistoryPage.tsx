@@ -11,6 +11,7 @@ import { SeniorButton } from '../../components/common/SeniorButton';
 import type { RecognitionResponse } from '../../api/recognition';
 import { getRecognitionsApi, getRecognitionApi } from '../../api/recognition';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const HistoryPage: React.FC = () => {
   const { user, setCurrentTab } = useApp();
@@ -20,6 +21,7 @@ export const HistoryPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [detailData, setDetailData] = useState<Record<string, RecognitionResponse>>({});
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -30,14 +32,16 @@ export const HistoryPage: React.FC = () => {
         return;
       }
       try {
+        setError(null);
         const res = await getRecognitionsApi(token, 0, 20);
         if (res.success && res.data) {
           setRecognitions(res.data.content);
         } else {
           throw new Error(res.error?.message || '기록을 불러오지 못했습니다.');
         }
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        console.error('Failed to load recognition history:', err);
+        setError('기록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
       } finally {
         setLoading(false);
       }
@@ -51,6 +55,7 @@ export const HistoryPage: React.FC = () => {
       return;
     }
     setExpandedId(id);
+    setDetailError(null);
     
     if (!detailData[id]) {
       const token = localStorage.getItem('accessToken');
@@ -62,6 +67,7 @@ export const HistoryPage: React.FC = () => {
           }
         } catch (err) {
           console.error(err);
+          setDetailError('기록 상세 내용을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
         }
       }
     }
@@ -109,9 +115,7 @@ export const HistoryPage: React.FC = () => {
           기록을 불러오는 중입니다...
         </div>
       ) : error ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--color-danger)' }}>
-          {error}
-        </div>
+        <ErrorMessage message={error} />
       ) : recognitions.length === 0 ? (
         <div className="vb-empty-state" style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--border-radius-lg)', border: '2px solid var(--color-border)' }}>
           <Mic size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 16px' }} />
@@ -201,6 +205,8 @@ export const HistoryPage: React.FC = () => {
               <Activity size={24} color="var(--color-secondary)" />
               <span>음성 인식 상세 기록</span>
             </h2>
+
+            {detailError && <div style={{ marginBottom: '16px' }}><ErrorMessage message={detailError} /></div>}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {recognitions.map((item) => {

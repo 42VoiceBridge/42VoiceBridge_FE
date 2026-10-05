@@ -8,8 +8,8 @@ import {
   Maximize2,
   X,
 } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
 import { speakText, AudioRecorderService } from '../../utils/audioUtils';
 import { createRecognitionApi, getRecognitionsApi, confirmRecognitionApi } from '../../api/recognition';
@@ -18,7 +18,6 @@ import { requestTtsApi, getTtsStatusApi } from '../../api/tts';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 
 export const VoiceAssistPage: React.FC = () => {
-  const { } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -28,6 +27,8 @@ export const VoiceAssistPage: React.FC = () => {
   const [activeRecognitionId, setActiveRecognitionId] = useState<string | null>(null);
   const [editableText, setEditableText] = useState<string>('');
   const [isConfirming, setIsConfirming] = useState(false);
+  const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [conversationError, setConversationError] = useState<string | null>(null);
   
   type ConfirmedData = { confirmationId: string; confirmedText: string };
   const [confirmedRecognitions, setConfirmedRecognitions] = useState<Record<string, ConfirmedData>>({});
@@ -73,6 +74,7 @@ export const VoiceAssistPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to load recent recognitions:', err);
+      setConversationError('최근 대화 기록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -87,9 +89,10 @@ export const VoiceAssistPage: React.FC = () => {
   }, []);
 
   const handleStartAssistRecord = async () => {
+    setRecordingError(null);
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      alert('로그인이 필요합니다.');
+      setRecordingError('로그인이 필요합니다.');
       return;
     }
 
@@ -99,10 +102,11 @@ export const VoiceAssistPage: React.FC = () => {
       if (started) {
         setIsRecording(true);
       } else {
-        alert('마이크 접근이 거부되었거나 권한이 없습니다.');
+        setRecordingError('마이크 사용 권한이 필요합니다. 브라우저 설정에서 마이크 권한을 허용해주세요.');
       }
     } catch (e) {
-      alert('마이크를 시작하는 중 오류가 발생했습니다.');
+      console.error('Failed to start microphone:', e);
+      setRecordingError('음성을 녹음하지 못했습니다. 다시 시도해주세요.');
     }
   };
 
@@ -111,23 +115,24 @@ export const VoiceAssistPage: React.FC = () => {
     
     setIsRecording(false);
     setIsProcessing(true);
+    setRecordingError(null);
     
     try {
       const audioUrl = await recorderRef.current.stopRecording();
       if (!audioUrl) {
-        alert('녹음된 오디오가 없습니다.');
+        setRecordingError('녹음된 음성이 없습니다. 다시 시도해주세요.');
         setIsProcessing(false);
         return;
       }
       
       const blob = await fetch(audioUrl).then(r => r.blob());
       if (blob.size === 0) {
-        alert('오디오 크기가 0입니다. 다시 시도해주세요.');
+        setRecordingError('녹음된 음성이 없습니다. 다시 시도해주세요.');
         setIsProcessing(false);
         return;
       }
       if (blob.size > 10 * 1024 * 1024) {
-        alert('녹음 파일이 너무 큽니다. 다시 시도해주세요.');
+        setRecordingError('녹음 파일이 너무 큽니다. 짧게 녹음한 후 다시 시도해주세요.');
         setIsProcessing(false);
         return;
       }
@@ -143,11 +148,12 @@ export const VoiceAssistPage: React.FC = () => {
       }
     } catch (err: any) {
       if (err.message && (err.message.includes('401') || err.message.includes('403'))) {
-        alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+        setRecordingError('인증이 만료되었습니다. 다시 로그인해주세요.');
       } else if (err.message && err.message.includes('400')) {
-        alert('올바르지 않은 녹음 파일입니다. 다시 말씀해주세요.');
+        setRecordingError('올바르지 않은 녹음 파일입니다. 다시 말씀해주세요.');
       } else {
-        alert(err.message || '음성 인식 처리 중 오류가 발생했습니다.');
+        console.error('Recognition failed:', err);
+        setRecordingError('음성을 변환하지 못했습니다. 잠시 후 다시 시도해주세요.');
       }
     } finally {
       setIsProcessing(false);
@@ -155,15 +161,16 @@ export const VoiceAssistPage: React.FC = () => {
   };
 
   const handleConfirm = async (recognitionId: string) => {
+    setConversationError(null);
     const textToConfirm = editableText.trim();
     if (!textToConfirm) {
-      alert('확정할 텍스트가 비어 있습니다.');
+      setConversationError('확정할 텍스트를 입력해주세요.');
       return;
     }
     
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      alert('로그인이 필요합니다.');
+      setConversationError('로그인이 필요합니다.');
       return;
     }
 
@@ -180,7 +187,8 @@ export const VoiceAssistPage: React.FC = () => {
         }));
       }
     } catch (err: any) {
-      alert(err.message || '텍스트 확정 중 오류가 발생했습니다.');
+      console.error('Failed to confirm recognition:', err);
+      setConversationError('문장을 확정하지 못했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
       setIsConfirming(false);
     }
@@ -194,6 +202,7 @@ export const VoiceAssistPage: React.FC = () => {
 
   const handleSpeakAloud = async (recognitionId: string) => {
     if (speakingId) return;
+    setConversationError(null);
 
     const confirmed = confirmedRecognitions[recognitionId];
     if (!confirmed || !confirmed.confirmationId) {
@@ -253,13 +262,18 @@ export const VoiceAssistPage: React.FC = () => {
       
       const code = err.code ? parseInt(err.code, 10) : 0;
       if (code >= 400 && code < 500) {
-        alert('음성 출력 요청이 거절되었습니다.');
+        setConversationError('음성 출력 요청을 처리하지 못했습니다. 다시 시도해주세요.');
         console.error('TTS 4xx Error:', err);
       } else if (err.message === 'TTS_FAILED') {
-        alert('TTS 음성 생성에 실패했습니다.');
+        setConversationError('음성을 생성하지 못했습니다. 다시 시도해주세요.');
       } else {
         console.warn('Backend TTS failed, falling back to Browser SpeechSynthesis', err);
-        await speakText(textToSpeak, 0.9);
+        try {
+          await speakText(textToSpeak, 0.9);
+        } catch (fallbackError) {
+          console.error('Browser speech fallback failed:', fallbackError);
+          setConversationError('음성을 재생하지 못했습니다. 다시 시도해주세요.');
+        }
       }
     } finally {
       if (requestGeneration === ttsGenerationRef.current) {
@@ -297,6 +311,12 @@ export const VoiceAssistPage: React.FC = () => {
         <div style={{ maxWidth: '480px', margin: '0 auto 28px' }}>
           <AudioVisualizer isRecording={isRecording} height={76} />
         </div>
+
+        {recordingError && (
+          <div style={{ maxWidth: '640px', margin: '0 auto 24px', textAlign: 'left' }}>
+            <ErrorMessage message={recordingError} />
+          </div>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           {!isRecording && !isProcessing ? (
@@ -338,6 +358,7 @@ export const VoiceAssistPage: React.FC = () => {
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {conversationError && <ErrorMessage message={conversationError} />}
           {recentRecognitions.map((msg) => (
             <article className="responsive-panel vb-conversation-row"
               key={msg.recognitionId}

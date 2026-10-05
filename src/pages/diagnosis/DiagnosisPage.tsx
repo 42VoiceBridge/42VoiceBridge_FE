@@ -27,6 +27,7 @@ import type {
   JamoErrorStatsResponse
 } from '../../api/diagnosis';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 type Step = 'intro' | 'recording' | 'analyzing' | 'result';
 
@@ -41,6 +42,7 @@ export const DiagnosisPage: React.FC = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sentences, setSentences] = useState<DiagnosisSentenceDto[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Map of sentenceId -> recordingId
   const [recordingIds, setRecordingIds] = useState<Record<string, string>>({});
@@ -71,9 +73,10 @@ export const DiagnosisPage: React.FC = () => {
 
   // 1. Intro -> Start
   const handleStartDiagnosis = async () => {
+    setError(null);
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      alert('로그인이 필요합니다.');
+      setError('로그인이 필요합니다.');
       return;
     }
     
@@ -89,26 +92,38 @@ export const DiagnosisPage: React.FC = () => {
       setStep('recording');
       setHasRecorded(false);
       setRecordedTime(0);
-    } catch (err: any) {
-      alert(err.message || '진단 세션 생성 중 오류가 발생했습니다.');
+    } catch (err) {
+      console.error('Failed to create diagnosis session:', err);
+      setError('진단을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
   // 2. Start Recording
   const startRecording = async () => {
-    recorderRef.current = new AudioRecorderService();
-    await recorderRef.current.startRecording();
-    setIsRecording(true);
-    setHasRecorded(false);
-    setRecordedTime(0);
+    setError(null);
+    try {
+      recorderRef.current = new AudioRecorderService();
+      const started = await recorderRef.current.startRecording();
+      if (!started) {
+        setError('마이크 사용 권한이 필요합니다. 브라우저 설정에서 마이크 권한을 허용해주세요.');
+        return;
+      }
+      setIsRecording(true);
+      setHasRecorded(false);
+      setRecordedTime(0);
 
-    timerRef.current = setInterval(() => {
-      setRecordedTime((prev) => prev + 1);
-    }, 1000);
+      timerRef.current = setInterval(() => {
+        setRecordedTime((prev) => prev + 1);
+      }, 1000);
+    } catch (recordingError) {
+      console.error('Failed to start diagnosis recording:', recordingError);
+      setError('음성을 녹음하지 못했습니다. 다시 시도해주세요.');
+    }
   };
 
   // 3. Stop Recording
   const stopRecording = async () => {
+    setError(null);
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -123,7 +138,7 @@ export const DiagnosisPage: React.FC = () => {
         
         // Size validation (Max 10MB)
         if (blob.size > 10 * 1024 * 1024) {
-          alert('녹음 파일이 너무 커요. 다시 녹음해 주세요.');
+          setError('녹음 파일이 너무 큽니다. 짧게 녹음한 후 다시 시도해주세요.');
           setIsRecording(false);
           setHasRecorded(false);
           setUploading(false);
@@ -149,13 +164,14 @@ export const DiagnosisPage: React.FC = () => {
           } catch (err: any) {
             // Handle specific errors based on instructions
             if (err.code === 'INVALID_STATE_TRANSITION' || err.message.includes('409')) {
-              alert('이미 완료된 진단이거나 현재 업로드할 수 없는 상태입니다.');
+              setError('이미 완료된 진단이거나 현재 업로드할 수 없는 상태입니다.');
             } else if (err.message.includes('401') || err.message.includes('403')) {
-              alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+              setError('인증이 만료되었습니다. 다시 로그인해주세요.');
             } else if (err.message.includes('400')) {
-              alert('올바르지 않은 녹음 파일입니다. 다시 녹음해주세요.');
+              setError('올바르지 않은 녹음 파일입니다. 다시 녹음해주세요.');
             } else {
-              alert(err.message || '녹음 업로드 중 오류가 발생했습니다.');
+              console.error('Failed to upload diagnosis recording:', err);
+              setError('음성 파일을 업로드하지 못했습니다. 다시 시도해주세요.');
             }
             // Failed to upload, reset so user can try again
             setIsRecording(false);
@@ -163,7 +179,8 @@ export const DiagnosisPage: React.FC = () => {
           }
         }
       } catch (err: any) {
-        alert(err.message || '녹음 처리 중 오류가 발생했습니다.');
+        console.error('Failed to process diagnosis recording:', err);
+        setError('음성을 녹음하지 못했습니다. 다시 시도해주세요.');
         setIsRecording(false);
         setHasRecorded(false);
       } finally {
@@ -174,6 +191,7 @@ export const DiagnosisPage: React.FC = () => {
 
   // 4. Next sentence or finish
   const handleNextSentence = () => {
+    setError(null);
     if (currentIndex < sentences.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setHasRecorded(false);
@@ -205,7 +223,7 @@ export const DiagnosisPage: React.FC = () => {
             const failedSentence = res.data.sentences.find(s => s.recordingStatus === 'FAILED');
             if (failedSentence) {
                if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
-               alert('일부 녹음의 분석에 실패했습니다. 해당 문장을 다시 녹음해주세요.');
+               setError('일부 녹음의 분석에 실패했습니다. 해당 문장을 다시 녹음해주세요.');
                // Re-route to the failed sentence
                const failedIndex = sentences.findIndex(s => s.sentenceId === failedSentence.sentenceId);
                if (failedIndex !== -1) {
@@ -220,7 +238,7 @@ export const DiagnosisPage: React.FC = () => {
         // Just log or silently retry, but if it's auth error we should stop
         if (e.message && (e.message.includes('401') || e.message.includes('403'))) {
           if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
-          alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+          setError('인증이 만료되었습니다. 다시 로그인해주세요.');
         }
       }
     }, 2500);
@@ -252,7 +270,8 @@ export const DiagnosisPage: React.FC = () => {
         origin: { y: 0.6 },
       });
     } catch (e) {
-      alert('결과를 불러오는 중 오류가 발생했습니다.');
+      console.error('Failed to load diagnosis results:', e);
+      setError('진단 결과를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
     }
   };
 
@@ -424,6 +443,7 @@ export const DiagnosisPage: React.FC = () => {
               분석 시작하기
             </SeniorButton>
           </div>
+          {error && <div style={{ marginTop: '24px' }}><ErrorMessage message={error} /></div>}
         </div>
       </div>
     );
@@ -548,6 +568,8 @@ export const DiagnosisPage: React.FC = () => {
             </div>
           </div>
 
+          {error && <div style={{ marginBottom: '24px', textAlign: 'left' }}><ErrorMessage message={error} /></div>}
+
           <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
             {!isRecording ? (
               <SeniorButton
@@ -617,6 +639,7 @@ export const DiagnosisPage: React.FC = () => {
           <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
             잠시만 기다려주세요!
           </p>
+          {error && <div style={{ marginTop: '24px', textAlign: 'left' }}><ErrorMessage message={error} /></div>}
         </div>
       </div>
     );
@@ -709,10 +732,8 @@ export const DiagnosisPage: React.FC = () => {
                 누적 발음 분석을 불러오는 중입니다...
               </div>
             ) : jamoError ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--border-radius-md)' }}>
-                <p style={{ fontSize: 'var(--text-lg)', color: 'var(--color-danger)', marginBottom: '16px', fontWeight: 600 }}>
-                  누적 발음 분석을 불러오지 못했습니다.
-                </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                <ErrorMessage message="누적 발음 분석을 불러오지 못했습니다. 잠시 후 다시 시도해주세요." />
                 <SeniorButton variant="outline" size="normal" onClick={fetchJamoStats}>다시 불러오기</SeniorButton>
               </div>
             ) : !jamoStats || jamoStats.sessionsUsed === 0 || !jamoStats.tokens || jamoStats.tokens.length === 0 ? (
