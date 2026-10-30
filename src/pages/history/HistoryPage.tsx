@@ -17,6 +17,7 @@ export const HistoryPage: React.FC = () => {
   const { user, setCurrentTab } = useApp();
   
   const [recognitions, setRecognitions] = useState<RecognitionResponse[]>([]);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -36,6 +37,7 @@ export const HistoryPage: React.FC = () => {
         const res = await getRecognitionsApi(token, 0, 20);
         if (res.success && res.data) {
           setRecognitions(res.data.content);
+          setTotalElements(res.data.totalElements);
         } else {
           throw new Error(res.error?.message || '기록을 불러오지 못했습니다.');
         }
@@ -75,7 +77,7 @@ export const HistoryPage: React.FC = () => {
 
   return (
     <div className="vb-theme vb-page vb-page--history responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="HISTORY / YOUR RECORDS" title={<>나의 대화와,<br /><span>목소리의 기록.</span></>} description="실제 음성 인식 결과와 인식 신뢰도의 흐름을 확인합니다." meta={`TOTAL ${recognitions.length}`} />
+      <FeaturePageHeader eyebrow="HISTORY / YOUR RECORDS" title={<>나의 대화와,<br /><span>목소리의 기록.</span></>} description="실제 음성 인식 결과와 인식 신뢰도의 흐름을 확인합니다." meta={`TOTAL ${totalElements}`} />
       {/* User Summary Profile Card */}
       <div className="responsive-panel vb-history-summary"
         style={{
@@ -96,7 +98,7 @@ export const HistoryPage: React.FC = () => {
           <p className="vb-eyebrow" style={{ marginBottom: '8px' }}>RECOGNITION ARCHIVE</p>
           <h2 style={{ fontSize: 'var(--text-2xl)' }}>{user?.name || '사용자'}님의 음성 인식 기록</h2>
           <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)' }}>
-            총 {recognitions.length}건의 기록이 있습니다.
+            총 {totalElements}건의 기록이 있습니다.
           </p>
         </div>
 
