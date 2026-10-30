@@ -100,7 +100,7 @@ export const SeniorButton = React.forwardRef<HTMLButtonElement, SeniorButtonProp
         justifyContent: 'center',
         gap: '12px',
         fontWeight: 700,
-        borderRadius: 'var(--border-radius-md)',
+        borderRadius: '8px',
         width: fullWidth ? '100%' : 'auto',
         opacity: disabled ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',

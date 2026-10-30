@@ -7,6 +7,7 @@ export const LoginPage: React.FC = () => {
   const { login, loginWithKakao, setCurrentTab } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(() => {
     const kakaoError = sessionStorage.getItem('kakaoLoginError');
     if (kakaoError) sessionStorage.removeItem('kakaoLoginError');
@@ -35,10 +36,23 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
-    
+    const newFieldErrors: { email?: string; password?: string } = {};
+    if (!email.trim()) {
+      newFieldErrors.email = '이메일을 입력해주세요.';
+    }
+    if (!password) {
+      newFieldErrors.password = '비밀번호를 입력해주세요.';
+    }
+
+    if (newFieldErrors.email || newFieldErrors.password) {
+      setFieldErrors(newFieldErrors);
+      setErrorMsg('이메일과 비밀번호를 모두 입력해주세요.');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg(null);
+    setFieldErrors({});
     setSuccessMsg(null);
     try {
       await login(email, password);
@@ -80,34 +94,38 @@ export const LoginPage: React.FC = () => {
             <span>DESERVES TO</span>
             <span>BE HEARD<span className="vb-title-dot">.</span></span>
           </div>
-          
+
           <div className="vb-slider-art" aria-hidden="true" style={{ marginTop: 'clamp(40px, 8vw, 80px)' }}>
-             <svg className="vb-graphic" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-               <path d="M0 60 Q 100 0, 200 60 T 400 60" stroke="var(--vb-line)" strokeWidth="2" fill="none" />
-               <path d="M0 60 Q 100 120, 200 60 T 400 60" stroke="var(--vb-green)" strokeWidth="3" fill="none" />
-               <circle cx="200" cy="60" r="8" fill="var(--vb-green)" />
-               <circle cx="100" cy="30" r="4" fill="var(--vb-line)" />
-               <circle cx="300" cy="90" r="4" fill="var(--vb-line)" />
-             </svg>
+            <svg className="vb-graphic" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 60 Q 100 0, 200 60 T 400 60" stroke="var(--vb-line)" strokeWidth="2" fill="none" />
+              <path d="M0 60 Q 100 120, 200 60 T 400 60" stroke="var(--vb-green)" strokeWidth="3" fill="none" />
+              <circle cx="200" cy="60" r="8" fill="var(--vb-green)" />
+              <circle cx="100" cy="30" r="4" fill="var(--vb-line)" />
+              <circle cx="300" cy="90" r="4" fill="var(--vb-line)" />
+            </svg>
           </div>
         </div>
 
         {/* Right Form Column */}
         <div className="vb-auth-form" style={{ maxWidth: '440px', margin: '0 auto', width: '100%' }}>
-          <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 500, marginBottom: '48px', letterSpacing: '-0.05em' }}>
-            다시 만나서 반가워요.
+          <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 500, marginBottom: '32px', letterSpacing: '-0.05em' }}>
+            만나서 반가워요.
           </h1>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
             <div>
-              <label htmlFor="login-email" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
+              <label htmlFor="login-email" className="vb-eyebrow" style={{ display: 'block', marginBottom: '8px', color: 'var(--vb-muted)' }}>
                 EMAIL
               </label>
               <input
                 id="login-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                  if (errorMsg) setErrorMsg(null);
+                }}
                 placeholder="이메일 주소"
                 required
                 autoComplete="email"
@@ -115,7 +133,7 @@ export const LoginPage: React.FC = () => {
                   width: '100%',
                   background: 'transparent',
                   border: 'none',
-                  borderBottom: '1px solid var(--vb-line)',
+                  borderBottom: `1px solid ${fieldErrors.email ? '#d84c3e' : 'var(--vb-line)'}`,
                   padding: '8px 0 16px',
                   fontSize: 'var(--text-lg)',
                   color: 'var(--vb-ink)',
@@ -124,12 +142,17 @@ export const LoginPage: React.FC = () => {
                   borderRadius: '0'
                 }}
                 onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
-                onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+                onBlur={(e) => e.target.style.borderBottomColor = fieldErrors.email ? '#d84c3e' : 'var(--vb-line)'}
               />
+              {fieldErrors.email && (
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="login-password" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
+              <label htmlFor="login-password" className="vb-eyebrow" style={{ display: 'block', marginBottom: '8px', color: 'var(--vb-muted)' }}>
                 PASSWORD
               </label>
               <div style={{ position: 'relative' }}>
@@ -137,7 +160,11 @@ export const LoginPage: React.FC = () => {
                   id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                    if (errorMsg) setErrorMsg(null);
+                  }}
                   placeholder="비밀번호"
                   required
                   autoComplete="current-password"
@@ -145,7 +172,7 @@ export const LoginPage: React.FC = () => {
                     width: '100%',
                     background: 'transparent',
                     border: 'none',
-                    borderBottom: '1px solid var(--vb-line)',
+                    borderBottom: `1px solid ${fieldErrors.password ? '#d84c3e' : 'var(--vb-line)'}`,
                     padding: '8px 48px 16px 0',
                     fontSize: 'var(--text-lg)',
                     color: 'var(--vb-ink)',
@@ -154,7 +181,7 @@ export const LoginPage: React.FC = () => {
                     borderRadius: '0'
                   }}
                   onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
-                  onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+                  onBlur={(e) => e.target.style.borderBottomColor = fieldErrors.password ? '#d84c3e' : 'var(--vb-line)'}
                 />
                 <button
                   type="button"
@@ -175,6 +202,11 @@ export const LoginPage: React.FC = () => {
                   {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             {successMsg && (
@@ -199,7 +231,12 @@ export const LoginPage: React.FC = () => {
 
             {errorMsg && (
               <div style={{ marginTop: '-12px' }}>
-                <ErrorMessage message={errorMsg} />
+                <ErrorMessage
+                  message={errorMsg}
+                  autoDismiss={true}
+                  duration={4000}
+                  onDismiss={() => setErrorMsg(null)}
+                />
               </div>
             )}
 
@@ -207,14 +244,14 @@ export const LoginPage: React.FC = () => {
               {isLoading ? '로그인 중...' : '로그인'}
               {!isLoading && <ArrowRight size={20} />}
             </button>
-            
-            <button 
-              type="button" 
+
+            <button
+              type="button"
               onClick={handleKakaoLogin}
-              disabled={isLoading} 
-              style={{ 
-                marginTop: '12px', 
-                width: '100%', 
+              disabled={isLoading}
+              style={{
+                marginTop: '12px',
+                width: '100%',
                 justifyContent: 'center',
                 backgroundColor: '#FEE500',
                 color: 'rgba(0,0,0,0.85)',
@@ -232,7 +269,7 @@ export const LoginPage: React.FC = () => {
               }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path fillRule="evenodd" clipRule="evenodd" d="M9 2C4.029 2 0 4.935 0 8.556C0 10.871 1.55 12.898 3.905 14.072C3.766 14.542 3.197 16.438 3.149 16.634C3.149 16.634 3.109 16.85 3.256 16.892C3.404 16.933 3.6 16.786 3.6 16.786C3.99 16.516 6.811 14.567 7.227 14.288C7.799 14.382 8.391 14.432 9 14.432C13.971 14.432 18 11.497 18 7.876C18 4.255 13.971 2 9 2Z" fill="rgba(0,0,0,0.85)"/>
+                <path fillRule="evenodd" clipRule="evenodd" d="M9 2C4.029 2 0 4.935 0 8.556C0 10.871 1.55 12.898 3.905 14.072C3.766 14.542 3.197 16.438 3.149 16.634C3.149 16.634 3.109 16.85 3.256 16.892C3.404 16.933 3.6 16.786 3.6 16.786C3.99 16.516 6.811 14.567 7.227 14.288C7.799 14.382 8.391 14.432 9 14.432C13.971 14.432 18 11.497 18 7.876C18 4.255 13.971 2 9 2Z" fill="rgba(0,0,0,0.85)" />
               </svg>
               카카오로 시작하기
             </button>
@@ -241,16 +278,16 @@ export const LoginPage: React.FC = () => {
           <div style={{ marginTop: '56px', paddingTop: '36px', borderTop: '1px solid var(--vb-line)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: 'var(--text-base)' }}>
               <span className="vb-muted">처음이신가요?</span>
-              <button 
-                type="button" 
-                className="vb-text-link" 
+              <button
+                type="button"
+                className="vb-text-link"
                 onClick={() => setCurrentTab('register')}
                 style={{ minHeight: 'auto', padding: 0 }}
               >
                 회원가입<ArrowRight size={18} />
               </button>
             </div>
-            
+
 
           </div>
         </div>

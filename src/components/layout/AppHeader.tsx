@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpRight, LogIn, LogOut, Menu, UserRound, X } from 'lucide-react';
+import { ArrowUpRight, HelpCircle, LogIn, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { NavTab } from '../../context/AppContext';
 import { AccessibilityBar } from '../common/AccessibilityBar';
@@ -14,7 +14,7 @@ const navItems: { id: NavTab; label: string; english: string }[] = [
 ];
 
 export const AppHeader = () => {
-  const { user, currentTab, setCurrentTab, logout } = useApp();
+  const { user, currentTab, setCurrentTab, logout, openOnboarding } = useApp();
   const [openPanel, setOpenPanel] = useState<'menu' | 'account' | null>(null);
   const navigate = (tab: NavTab) => { setCurrentTab(tab); setOpenPanel(null); };
 
@@ -34,7 +34,7 @@ export const AppHeader = () => {
           }}>
           <UserRound size={23} strokeWidth={1.5} /><span>{user ? 'MY PAGE' : 'LOGIN'}</span>
         </button>
-        <button className="vb-wordmark" aria-label="VoiceBridge 홈" onClick={() => navigate('dashboard')}>VOICE<span>BRIDGE</span><i aria-hidden="true">∿</i></button>
+        <button className="vb-wordmark" aria-label="VoiceBridge 홈" onClick={() => navigate('dashboard')}>VOICE<span>BRIDGE</span></button>
         <button className="vb-header-action vb-header-menu" aria-label="메뉴 열기" aria-expanded={openPanel === 'menu'} aria-haspopup="dialog" onClick={() => setOpenPanel('menu')}>
           <span>MENU</span><Menu size={24} strokeWidth={1.5} />
         </button>
@@ -53,6 +53,23 @@ export const AppHeader = () => {
           <section className="vb-drawer-access" aria-labelledby="vb-access-title">
             <h2 id="vb-access-title">편안하게 보기</h2><AccessibilityBar />
           </section>
+          <div style={{ paddingBlock: '18px', borderBottom: '1px solid var(--vb-line)' }}>
+            <button
+              type="button"
+              className="vb-text-link"
+              onClick={() => {
+                setOpenPanel(null);
+                openOnboarding();
+              }}
+              style={{ width: '100%', justifyContent: 'space-between', borderBottom: 'none' }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: 'var(--text-base)' }}>
+                <HelpCircle size={20} color="var(--vb-green)" />
+                이용 방법 다시 보기
+              </span>
+              <ArrowUpRight size={20} />
+            </button>
+          </div>
           {!user && <div className="vb-drawer-account"><button className="vb-text-link" onClick={() => {
             setOpenPanel(null);
             sessionStorage.setItem('redirectTab', currentTab !== 'login' && currentTab !== 'register' ? currentTab : 'dashboard');
@@ -72,7 +89,6 @@ export const AppHeader = () => {
           </section>
           <section className="vb-account-section" aria-labelledby="vb-account-title">
             <p className="vb-eyebrow" id="vb-account-title">ACCOUNT</p>
-            <button type="button" disabled><span>이메일 변경</span><small>준비 중</small></button>
             <button type="button" disabled><span>비밀번호 변경</span><small>준비 중</small></button>
           </section>
           <button className="vb-account-logout" type="button" onClick={() => { logout(); setOpenPanel(null); }}><span>LOG OUT</span><LogOut size={22} /></button>
@@ -82,3 +98,4 @@ export const AppHeader = () => {
     </header>
   );
 };
+

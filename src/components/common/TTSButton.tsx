@@ -59,7 +59,7 @@ export const TTSButton: React.FC<TTSButtonProps> = ({
         backgroundColor: isPlaying ? 'var(--color-secondary)' : 'var(--color-secondary-light)',
         color: isPlaying ? '#ffffff' : 'var(--color-secondary)',
         border: '2px solid var(--color-secondary)',
-        borderRadius: 'var(--border-radius-full)',
+        borderRadius: '8px',
         boxShadow: isPlaying ? '0 0 0 4px rgba(0, 135, 108, 0.2)' : 'var(--shadow-sm)',
         transition: 'all var(--transition-fast)',
         cursor: 'pointer',

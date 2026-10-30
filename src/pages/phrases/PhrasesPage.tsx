@@ -326,7 +326,7 @@ export const PhrasesPage: React.FC = () => {
                 className={`vb-button ${isSelected ? '' : 'vb-button--ghost'}`}
                 style={{
                   padding: '12px 20px',
-                  borderRadius: '999px',
+                  borderRadius: '8px',
                   fontSize: 'var(--text-base)',
                   fontWeight: isSelected ? 700 : 500,
                   border: isSelected ? '2px solid var(--color-primary)' : '2px solid var(--color-border)',
@@ -341,7 +341,7 @@ export const PhrasesPage: React.FC = () => {
                   style={{
                     fontSize: 'var(--text-xs)',
                     padding: '2px 8px',
-                    borderRadius: '999px',
+                    borderRadius: '6px',
                     backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--color-bg-subtle)',
                     color: isSelected ? '#ffffff' : 'var(--color-text-muted)',
                     marginLeft: '4px',

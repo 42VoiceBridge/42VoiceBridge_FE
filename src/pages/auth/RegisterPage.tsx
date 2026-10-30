@@ -14,6 +14,12 @@ export const RegisterPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    email?: string;
+    password?: string;
+    passwordConfirm?: string;
+  }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -26,39 +32,65 @@ export const RegisterPage: React.FC = () => {
     setAgreeAll(checked);
     setAgreeTerms(checked);
     setAgreePrivacy(checked);
+    if (errorMsg) setErrorMsg('');
   };
 
   const handleAgreeTermsChange = (checked: boolean) => {
     setAgreeTerms(checked);
     setAgreeAll(checked && agreePrivacy);
+    if (errorMsg) setErrorMsg('');
   };
 
   const handleAgreePrivacyChange = (checked: boolean) => {
     setAgreePrivacy(checked);
     setAgreeAll(checked && agreeTerms);
+    if (errorMsg) setErrorMsg('');
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !password) {
-      setErrorMsg('모든 필수 항목을 입력해주세요.');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const newFieldErrors: {
+      name?: string;
+      email?: string;
+      password?: string;
+      passwordConfirm?: string;
+    } = {};
+
+    if (!name.trim()) {
+      newFieldErrors.name = '성명을 입력해주세요.';
+    }
+    if (!email.trim()) {
+      newFieldErrors.email = '이메일 주소를 입력해주세요.';
+    } else if (!emailRegex.test(email.trim())) {
+      newFieldErrors.email = '올바른 이메일 형식을 입력해주세요.';
+    }
+    if (!password) {
+      newFieldErrors.password = '비밀번호를 입력해주세요.';
+    } else if (password.length < 8) {
+      newFieldErrors.password = '비밀번호는 8자 이상 입력해주세요.';
+    }
+    if (!passwordConfirm) {
+      newFieldErrors.passwordConfirm = '비밀번호 확인을 입력해주세요.';
+    } else if (password !== passwordConfirm) {
+      newFieldErrors.passwordConfirm = '비밀번호가 서로 일치하지 않습니다.';
+    }
+
+    setFieldErrors(newFieldErrors);
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setErrorMsg('');
       return;
     }
-    if (password !== passwordConfirm) {
-      setErrorMsg('비밀번호가 서로 일치하지 않습니다.');
-      return;
-    }
-    if (password.length < 8) {
-      setErrorMsg('비밀번호는 8자 이상 입력해주세요.');
-      return;
-    }
+
     if (!agreeTerms || !agreePrivacy) {
       setErrorMsg('필수 약관에 모두 동의해주세요.');
       return;
     }
-    
+
     setIsLoading(true);
     setErrorMsg('');
+    setFieldErrors({});
     try {
       await signupApi(email, password, name);
       // 회원가입 성공 시 자동 로그인하지 않고 로그인 화면으로 이동
@@ -98,43 +130,53 @@ export const RegisterPage: React.FC = () => {
             <span>YOUR WAY<span className="vb-title-dot">.</span></span>
           </div>
           <p style={{ fontSize: 'var(--text-lg)', color: 'var(--vb-muted)', lineHeight: '1.7', maxWidth: '440px' }}>
-            목소리가 달라도 소통은 계속될 수 있도록.<br />
+            목소리가 달라도 소통은 계속될 수 있도록<br />
             VoiceBridge가 당신의 편안한 소통을 지원합니다.
           </p>
-          
+
           <div className="vb-slider-art" aria-hidden="true" style={{ marginTop: 'clamp(40px, 8vw, 80px)' }}>
-             <svg className="vb-graphic" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-               <path d="M0 60 Q 100 120, 200 60 T 400 60" stroke="var(--vb-line)" strokeWidth="2" fill="none" strokeDasharray="4 6" />
-               <path d="M0 60 Q 100 0, 200 60 T 400 60" stroke="var(--vb-green)" strokeWidth="3" fill="none" />
-               <circle cx="200" cy="60" r="6" fill="var(--vb-green)" />
-             </svg>
+            <svg className="vb-graphic" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 60 Q 100 120, 200 60 T 400 60" stroke="var(--vb-line)" strokeWidth="2" fill="none" strokeDasharray="4 6" />
+              <path d="M0 60 Q 100 0, 200 60 T 400 60" stroke="var(--vb-green)" strokeWidth="3" fill="none" />
+              <circle cx="200" cy="60" r="6" fill="var(--vb-green)" />
+            </svg>
           </div>
         </div>
 
         {/* Right Form Column */}
         <div className="vb-auth-form" style={{ maxWidth: '440px', margin: '0 auto', width: '100%' }}>
-          <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 500, marginBottom: '48px', letterSpacing: '-0.05em' }}>
+          <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 500, marginBottom: '12px', letterSpacing: '-0.05em' }}>
             새 계정 만들기
           </h1>
+          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--vb-muted)', marginBottom: '28px', lineHeight: 1.5 }}>
+            <span style={{ color: '#e53e3e', fontWeight: 700, marginRight: '4px' }} aria-hidden="true">*</span>
+            표시는 필수 입력 항목입니다.
+          </p>
 
-          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '36px' }}>
+          <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
             <div>
-              <label htmlFor="reg-name" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
-                NAME
+              <label htmlFor="reg-name" className="vb-eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', color: 'var(--vb-muted)' }}>
+                <span>NAME</span>
+                <span style={{ color: '#e53e3e', fontWeight: 700 }} aria-hidden="true">*</span>
+                <span className="sr-only">(필수 입력)</span>
               </label>
               <input
                 id="reg-name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="이름 (닉네임)"
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                  if (errorMsg) setErrorMsg('');
+                }}
+                placeholder="성명"
                 required
                 autoComplete="name"
                 style={{
                   width: '100%',
                   background: 'transparent',
                   border: 'none',
-                  borderBottom: '1px solid var(--vb-line)',
+                  borderBottom: `1px solid ${fieldErrors.name ? '#d84c3e' : 'var(--vb-line)'}`,
                   padding: '8px 0 16px',
                   fontSize: 'var(--text-lg)',
                   color: 'var(--vb-ink)',
@@ -143,19 +185,30 @@ export const RegisterPage: React.FC = () => {
                   borderRadius: '0'
                 }}
                 onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
-                onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+                onBlur={(e) => e.target.style.borderBottomColor = fieldErrors.name ? '#d84c3e' : 'var(--vb-line)'}
               />
+              {fieldErrors.name && (
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="reg-email" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
-                EMAIL
+              <label htmlFor="reg-email" className="vb-eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', color: 'var(--vb-muted)' }}>
+                <span>EMAIL</span>
+                <span style={{ color: '#e53e3e', fontWeight: 700 }} aria-hidden="true">*</span>
+                <span className="sr-only">(필수 입력)</span>
               </label>
               <input
                 id="reg-email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                  if (errorMsg) setErrorMsg('');
+                }}
                 placeholder="이메일 주소"
                 required
                 autoComplete="email"
@@ -163,7 +216,7 @@ export const RegisterPage: React.FC = () => {
                   width: '100%',
                   background: 'transparent',
                   border: 'none',
-                  borderBottom: '1px solid var(--vb-line)',
+                  borderBottom: `1px solid ${fieldErrors.email ? '#d84c3e' : 'var(--vb-line)'}`,
                   padding: '8px 0 16px',
                   fontSize: 'var(--text-lg)',
                   color: 'var(--vb-ink)',
@@ -172,20 +225,31 @@ export const RegisterPage: React.FC = () => {
                   borderRadius: '0'
                 }}
                 onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
-                onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+                onBlur={(e) => e.target.style.borderBottomColor = fieldErrors.email ? '#d84c3e' : 'var(--vb-line)'}
               />
+              {fieldErrors.email && (
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="reg-password" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
-                PASSWORD
+              <label htmlFor="reg-password" className="vb-eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', color: 'var(--vb-muted)' }}>
+                <span>PASSWORD</span>
+                <span style={{ color: '#e53e3e', fontWeight: 700 }} aria-hidden="true">*</span>
+                <span className="sr-only">(필수 입력)</span>
               </label>
               <div style={{ position: 'relative' }}>
                 <input
                   id="reg-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                    if (errorMsg) setErrorMsg('');
+                  }}
                   placeholder="비밀번호"
                   required
                   autoComplete="new-password"
@@ -193,7 +257,7 @@ export const RegisterPage: React.FC = () => {
                     width: '100%',
                     background: 'transparent',
                     border: 'none',
-                    borderBottom: '1px solid var(--vb-line)',
+                    borderBottom: `1px solid ${fieldErrors.password ? '#d84c3e' : 'var(--vb-line)'}`,
                     padding: '8px 48px 16px 0',
                     fontSize: 'var(--text-lg)',
                     color: 'var(--vb-ink)',
@@ -202,7 +266,7 @@ export const RegisterPage: React.FC = () => {
                     borderRadius: '0'
                   }}
                   onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
-                  onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+                  onBlur={(e) => e.target.style.borderBottomColor = fieldErrors.password ? '#d84c3e' : 'var(--vb-line)'}
                 />
                 <button
                   type="button"
@@ -223,17 +287,28 @@ export const RegisterPage: React.FC = () => {
                   {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                 </button>
               </div>
+              {fieldErrors.password && (
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="reg-password-confirm" className="vb-eyebrow" style={{ display: 'block', marginBottom: '16px', color: 'var(--vb-muted)' }}>
-                CONFIRM PASSWORD
+              <label htmlFor="reg-password-confirm" className="vb-eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', color: 'var(--vb-muted)' }}>
+                <span>CONFIRM PASSWORD</span>
+                <span style={{ color: '#e53e3e', fontWeight: 700 }} aria-hidden="true">*</span>
+                <span className="sr-only">(필수 입력)</span>
               </label>
               <input
                 id="reg-password-confirm"
                 type={showPassword ? 'text' : 'password'}
                 value={passwordConfirm}
-                onChange={(e) => setPasswordConfirm(e.target.value)}
+                onChange={(e) => {
+                  setPasswordConfirm(e.target.value);
+                  if (fieldErrors.passwordConfirm) setFieldErrors((prev) => ({ ...prev, passwordConfirm: undefined }));
+                  if (errorMsg) setErrorMsg('');
+                }}
                 placeholder="비밀번호 재입력"
                 required
                 autoComplete="new-password"
@@ -241,7 +316,7 @@ export const RegisterPage: React.FC = () => {
                   width: '100%',
                   background: 'transparent',
                   border: 'none',
-                  borderBottom: '1px solid var(--vb-line)',
+                  borderBottom: `1px solid ${fieldErrors.passwordConfirm ? '#d84c3e' : 'var(--vb-line)'}`,
                   padding: '8px 0 16px',
                   fontSize: 'var(--text-lg)',
                   color: 'var(--vb-ink)',
@@ -250,8 +325,13 @@ export const RegisterPage: React.FC = () => {
                   borderRadius: '0'
                 }}
                 onFocus={(e) => e.target.style.borderBottomColor = 'var(--vb-green)'}
-                onBlur={(e) => e.target.style.borderBottomColor = 'var(--vb-line)'}
+                onBlur={(e) => e.target.style.borderBottomColor = fieldErrors.passwordConfirm ? '#d84c3e' : 'var(--vb-line)'}
               />
+              {fieldErrors.passwordConfirm && (
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                  {fieldErrors.passwordConfirm}
+                </p>
+              )}
             </div>
 
             {/* Terms of Service Section */}
@@ -404,7 +484,12 @@ export const RegisterPage: React.FC = () => {
 
             {errorMsg && (
               <div style={{ marginTop: '-12px' }}>
-                <ErrorMessage message={errorMsg} />
+                <ErrorMessage
+                  message={errorMsg}
+                  autoDismiss={true}
+                  duration={4000}
+                  onDismiss={() => setErrorMsg('')}
+                />
               </div>
             )}
 
@@ -416,9 +501,9 @@ export const RegisterPage: React.FC = () => {
 
           <div style={{ marginTop: '56px', paddingTop: '36px', borderTop: '1px solid var(--vb-line)', display: 'flex', gap: '20px', fontSize: 'var(--text-base)', alignItems: 'center' }}>
             <span className="vb-muted">이미 계정이 있으신가요?</span>
-            <button 
-              type="button" 
-              className="vb-text-link" 
+            <button
+              type="button"
+              className="vb-text-link"
               onClick={() => setCurrentTab('login')}
               style={{ minHeight: 'auto', padding: 0 }}
             >

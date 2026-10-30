@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { AppHeader } from './components/layout/AppHeader';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -10,9 +10,38 @@ import { HistoryPage } from './pages/history/HistoryPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { AppFooter } from './components/layout/AppFooter';
 import { LoginPromptDialog } from './components/common/LoginPromptDialog';
+import { SplashScreen } from './components/common/SplashScreen';
+import { OnboardingModal } from './components/common/OnboardingModal';
 
 const AppContent: React.FC = () => {
-  const { currentTab, isAuthModalOpen, closeAuthModal, confirmAuthModal } = useApp();
+  const {
+    currentTab,
+    isAuthModalOpen,
+    closeAuthModal,
+    confirmAuthModal,
+    isOnboardingOpen,
+    openOnboarding,
+    closeOnboarding,
+  } = useApp();
+
+  const [showSplash, setShowSplash] = useState(() => {
+    return sessionStorage.getItem('vb_splash_viewed') !== 'true';
+  });
+
+  useEffect(() => {
+    if (!showSplash) {
+      if (localStorage.getItem('vb_onboarding_completed') !== 'true') {
+        openOnboarding();
+      }
+    }
+  }, [showSplash, openOnboarding]);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    if (localStorage.getItem('vb_onboarding_completed') !== 'true') {
+      openOnboarding();
+    }
+  };
 
   const renderCurrentPage = () => {
     switch (currentTab) {
@@ -37,6 +66,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
       <AppHeader />
       <main style={{ flex: 1 }}>{renderCurrentPage()}</main>
       <AppFooter />
@@ -46,9 +76,14 @@ const AppContent: React.FC = () => {
           onConfirm={confirmAuthModal}
         />
       )}
+      <OnboardingModal
+        isOpen={isOnboardingOpen && !showSplash}
+        onClose={closeOnboarding}
+      />
     </div>
   );
 };
+
 
 export function App() {
   return (

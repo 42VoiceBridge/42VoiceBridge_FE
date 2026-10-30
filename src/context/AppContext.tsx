@@ -53,11 +53,14 @@ interface AppContextType {
   speechRate: number;
   setSpeechRate: (val: number) => void;
 
-
-
+  // Onboarding
+  isOnboardingOpen: boolean;
+  openOnboarding: () => void;
+  closeOnboarding: () => void;
 }
 
 import { loginApi, getMeApi, kakaoLoginApi } from '../api/auth';
+
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -133,8 +136,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? parseFloat(saved) : 1.0;
   });
 
-
-
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const openOnboarding = useCallback(() => {
+    setIsOnboardingOpen(true);
+  }, []);
+  const closeOnboarding = useCallback(() => {
+    setIsOnboardingOpen(false);
+  }, []);
   // Sync currentTab
   useEffect(() => {
     sessionStorage.setItem('currentTab', currentTab);
@@ -333,9 +341,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAutoTtsPlayback,
         speechRate,
         setSpeechRate,
-
+        isOnboardingOpen,
+        openOnboarding,
+        closeOnboarding,
       }}
     >
+
       {children}
     </AppContext.Provider>
   );
