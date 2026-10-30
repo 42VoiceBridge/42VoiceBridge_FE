@@ -21,15 +21,19 @@ export const LoginPromptDialog: React.FC<LoginPromptDialogProps> = ({ onClose, o
   return (
     <BrandDialog label="로그인 필요 안내" className="vb-auth-prompt-dialog" onClose={onClose}>
       <div
-        className="responsive-panel vb-auth-prompt-panel"
+        className="vb-auth-prompt-panel"
         role="document"
         style={{
-          width: 'min(440px, calc(100vw - 32px))',
-          backgroundColor: 'var(--color-bg-surface, #ffffff)',
+          width: '100%',
+          maxWidth: '440px',
+          backgroundColor: 'var(--color-bg-surface, #FFFFFF)',
           borderRadius: 'var(--border-radius-lg, 16px)',
-          border: '2px solid var(--color-border, #E0DDD6)',
-          boxShadow: 'var(--shadow-lg, 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04))',
-          padding: '36px 28px 28px',
+          border: '2px solid var(--color-border, #E0E0E0)',
+          boxShadow: '0 20px 48px rgba(0, 0, 0, 0.22)',
+          padding: '32px 28px 24px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           textAlign: 'center',
           position: 'relative',
           margin: 'auto',
@@ -37,20 +41,21 @@ export const LoginPromptDialog: React.FC<LoginPromptDialogProps> = ({ onClose, o
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 상단 닫기 버튼 */}
         <button
           type="button"
           onClick={onClose}
           aria-label="안내 닫기"
           style={{
             position: 'absolute',
-            top: '16px',
-            right: '16px',
-            background: 'transparent',
+            top: '20px',
+            right: '20px',
+            background: 'none',
             border: 'none',
-            color: 'var(--color-text-muted, #6B6965)',
+            color: 'var(--color-text-muted, #757575)',
             cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '50%',
+            padding: '6px',
+            borderRadius: '6px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -59,53 +64,55 @@ export const LoginPromptDialog: React.FC<LoginPromptDialogProps> = ({ onClose, o
           <X size={22} />
         </button>
 
+        {/* 아이콘: 온보딩 모달 규칙 (연한 원형 배경 제거, 순수 라인 아이콘, 딥그린) */}
         <div
           style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--color-primary-light, #DCE9E1)',
-            color: 'var(--color-primary, #7FA893)',
-            display: 'inline-flex',
+            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            marginBottom: '20px',
+            margin: '4px auto 20px',
           }}
+          aria-hidden="true"
         >
-          <LogIn size={28} strokeWidth={2} />
+          <LogIn size={44} strokeWidth={1.5} color="var(--vb-green, #28523e)" />
         </div>
 
+        {/* 제목 */}
         <h2
           id="auth-prompt-title"
           style={{
-            fontSize: 'var(--text-2xl, 1.5rem)',
-            fontWeight: 800,
-            color: 'var(--color-text-title, #30302E)',
-            marginBottom: '12px',
-            lineHeight: 1.3,
-            letterSpacing: '-0.02em',
+            fontSize: 'var(--text-2xl, 24px)',
+            fontWeight: 750,
+            lineHeight: 1.4,
+            color: 'var(--color-text, #1E232A)',
+            margin: '0 0 10px 0',
+            wordBreak: 'keep-all',
           }}
         >
           로그인이 필요한 기능이에요
         </h2>
 
+        {/* 간결한 설명 문구 */}
         <p
           id="auth-prompt-desc"
           style={{
-            fontSize: 'var(--text-base, 1rem)',
-            color: 'var(--color-text-muted, #6B6965)',
+            fontSize: 'var(--text-base, 16px)',
+            fontWeight: 500,
+            color: 'var(--color-text-muted, #666666)',
             lineHeight: 1.6,
-            marginBottom: '28px',
+            margin: '0 0 28px 0',
             wordBreak: 'keep-all',
           }}
         >
-          이 기능을 이용하려면 로그인이 필요해요. 로그인 후 이용하시겠어요?
+          로그인하면 이 기능을 이용할 수 있어요.
         </p>
 
+        {/* 하단 버튼: 취소(아웃라인) & 로그인하기(세이지그린 배경) */}
         <div
           style={{
             display: 'flex',
             gap: '12px',
+            alignItems: 'center',
             justifyContent: 'center',
             width: '100%',
           }}
@@ -117,8 +124,10 @@ export const LoginPromptDialog: React.FC<LoginPromptDialogProps> = ({ onClose, o
             style={{
               flex: 1,
               minHeight: '48px',
-              fontSize: 'var(--text-base)',
+              fontSize: 'var(--text-base, 16px)',
               fontWeight: 700,
+              boxShadow: 'none',
+              borderRadius: '8px',
             }}
           >
             취소
@@ -131,8 +140,10 @@ export const LoginPromptDialog: React.FC<LoginPromptDialogProps> = ({ onClose, o
             style={{
               flex: 1,
               minHeight: '48px',
-              fontSize: 'var(--text-base)',
+              fontSize: 'var(--text-base, 16px)',
               fontWeight: 700,
+              boxShadow: 'none',
+              borderRadius: '8px',
             }}
           >
             로그인하기
