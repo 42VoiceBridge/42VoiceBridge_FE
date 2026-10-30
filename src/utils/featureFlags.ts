@@ -2,10 +2,9 @@
  * VoiceBridge AI Feature Flags
  *
  * Rules:
- * - Default: OFF (all AI entry points and menus are hidden)
- * - Production: Controlled strictly by environment variables (VITE_ENABLE_AI_FEATURES, etc.)
- * - Dev preview: In development mode, query parameters (?ai=true, ?suggestion=true, ?conversation=true)
- *   or developer settings toggles can enable features without modifying production builds.
+ * - Default: ON (AI entry points and menus are visible by default in production and development)
+ * - Can be explicitly turned off via environment variables (e.g. VITE_ENABLE_AI_FEATURES=false)
+ * - Dev preview: Can be toggled in DEV settings or via query parameter (?ai=false / ?ai=true)
  */
 
 const STORAGE_KEY_SUGGESTION = 'vb_dev_feature_suggestion';
@@ -20,22 +19,22 @@ if (typeof window !== 'undefined') {
       sessionStorage.setItem(STORAGE_KEY_SUGGESTION, 'true');
       sessionStorage.setItem(STORAGE_KEY_CONVERSATION, 'true');
     } else if (aiParam === 'false' || aiParam === '0') {
-      sessionStorage.removeItem(STORAGE_KEY_SUGGESTION);
-      sessionStorage.removeItem(STORAGE_KEY_CONVERSATION);
+      sessionStorage.setItem(STORAGE_KEY_SUGGESTION, 'false');
+      sessionStorage.setItem(STORAGE_KEY_CONVERSATION, 'false');
     }
 
     const suggestionParam = params.get('suggestion');
     if (suggestionParam === 'true' || suggestionParam === '1') {
       sessionStorage.setItem(STORAGE_KEY_SUGGESTION, 'true');
     } else if (suggestionParam === 'false' || suggestionParam === '0') {
-      sessionStorage.removeItem(STORAGE_KEY_SUGGESTION);
+      sessionStorage.setItem(STORAGE_KEY_SUGGESTION, 'false');
     }
 
     const conversationParam = params.get('conversation');
     if (conversationParam === 'true' || conversationParam === '1') {
       sessionStorage.setItem(STORAGE_KEY_CONVERSATION, 'true');
     } else if (conversationParam === 'false' || conversationParam === '0') {
-      sessionStorage.removeItem(STORAGE_KEY_CONVERSATION);
+      sessionStorage.setItem(STORAGE_KEY_CONVERSATION, 'false');
     }
   } catch {
     // Non-browser environment
@@ -43,27 +42,27 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * AI 문장 추천 기능 활성화 여부
+ * AI 문장 추천 기능 활성화 여부 (기본값: true)
  */
 export const isPhraseSuggestionEnabled = (): boolean => {
-  if (import.meta.env.VITE_ENABLE_PHRASE_SUGGESTION === 'true') return true;
-  if (import.meta.env.VITE_ENABLE_AI_FEATURES === 'true') return true;
-  if (import.meta.env.DEV) {
-    return sessionStorage.getItem(STORAGE_KEY_SUGGESTION) === 'true';
+  if (import.meta.env.VITE_ENABLE_PHRASE_SUGGESTION === 'false') return false;
+  if (import.meta.env.VITE_ENABLE_AI_FEATURES === 'false') return false;
+  if (import.meta.env.DEV && sessionStorage.getItem(STORAGE_KEY_SUGGESTION) === 'false') {
+    return false;
   }
-  return false;
+  return true;
 };
 
 /**
- * AI 대화 모드 기능 활성화 여부
+ * AI 대화 모드 기능 활성화 여부 (기본값: true)
  */
 export const isConversationModeEnabled = (): boolean => {
-  if (import.meta.env.VITE_ENABLE_CONVERSATION_MODE === 'true') return true;
-  if (import.meta.env.VITE_ENABLE_AI_FEATURES === 'true') return true;
-  if (import.meta.env.DEV) {
-    return sessionStorage.getItem(STORAGE_KEY_CONVERSATION) === 'true';
+  if (import.meta.env.VITE_ENABLE_CONVERSATION_MODE === 'false') return false;
+  if (import.meta.env.VITE_ENABLE_AI_FEATURES === 'false') return false;
+  if (import.meta.env.DEV && sessionStorage.getItem(STORAGE_KEY_CONVERSATION) === 'false') {
+    return false;
   }
-  return false;
+  return true;
 };
 
 /**
@@ -76,10 +75,6 @@ export const setDevFeatureFlag = (
   if (!import.meta.env.DEV) return;
   const key =
     feature === 'suggestion' ? STORAGE_KEY_SUGGESTION : STORAGE_KEY_CONVERSATION;
-  if (enabled) {
-    sessionStorage.setItem(key, 'true');
-  } else {
-    sessionStorage.removeItem(key);
-  }
+  sessionStorage.setItem(key, enabled ? 'true' : 'false');
   window.dispatchEvent(new CustomEvent('vb:feature-flags-changed'));
 };

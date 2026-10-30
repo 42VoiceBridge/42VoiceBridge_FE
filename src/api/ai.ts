@@ -55,7 +55,7 @@ export const getPhraseSuggestionsApi = async (
   if (!response.ok) {
     if (response.status === 404) {
       throw new AiApiError(
-        '서버에서 AI 문장 추천 기능이 비활성화되어 있습니다.',
+        '현재 AI 문장 추천 기능을 이용할 수 없습니다. (서버 기능 비활성화)',
         404,
         'AI_FEATURE_DISABLED',
         true
@@ -151,7 +151,7 @@ export const createConversationTurnApi = async (
   if (!response.ok) {
     if (response.status === 404) {
       throw new AiApiError(
-        '서버에서 AI 대화 모드 기능이 비활성화되어 있습니다.',
+        '현재 AI 대화 모드 기능을 이용할 수 없습니다. (서버 기능 비활성화)',
         404,
         'AI_FEATURE_DISABLED',
         true
