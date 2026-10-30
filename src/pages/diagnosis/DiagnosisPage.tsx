@@ -33,7 +33,7 @@ type Step = 'intro' | 'recording' | 'analyzing' | 'result';
 const ANALYSIS_TIMEOUT_MS = 90_000;
 
 export const DiagnosisPage: React.FC = () => {
-  const { setCurrentTab } = useApp();
+  const { setCurrentTab, requireAuth } = useApp();
   const [step, setStep] = useState<Step>('intro');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
@@ -86,6 +86,9 @@ export const DiagnosisPage: React.FC = () => {
   const handleStartDiagnosis = async () => {
     stopPolling();
     setError(null);
+    if (!requireAuth('diagnosis')) {
+      return;
+    }
     const token = localStorage.getItem('accessToken');
     if (!token) {
       setError('로그인이 필요합니다.');
@@ -575,7 +578,7 @@ export const DiagnosisPage: React.FC = () => {
           </div>
 
           <div style={{ marginBottom: '28px' }}>
-            <AudioVisualizer isRecording={isRecording} height={70} />
+            <AudioVisualizer isRecording={isRecording} analyser={recorderRef.current?.getAnalyser()} stream={recorderRef.current?.getStream()} height={70} />
             <div style={{ marginTop: '12px', fontSize: 'var(--text-lg)', fontWeight: 700 }}>
               {isRecording ? (
                 <span style={{ color: 'var(--color-danger)' }}>

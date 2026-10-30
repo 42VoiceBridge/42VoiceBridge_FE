@@ -22,7 +22,10 @@ export const DashboardPage = () => {
   useEffect(() => {
     const fetchRecent = async () => {
       const token = localStorage.getItem('accessToken');
-      if (!token) return;
+      if (!token) {
+        setRecentRecognitions([]);
+        return;
+      }
       
       try {
         setRecentError(null);
@@ -36,7 +39,7 @@ export const DashboardPage = () => {
       }
     };
     fetchRecent();
-  }, []);
+  }, [user]);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);

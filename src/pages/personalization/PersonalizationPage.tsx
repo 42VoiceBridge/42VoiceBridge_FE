@@ -8,7 +8,7 @@ import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const PersonalizationPage: React.FC = () => {
-  const { user } = useApp();
+  const { user, requireAuth } = useApp();
   const [model, setModel] = useState<PersonalizationModelResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +56,14 @@ export const PersonalizationPage: React.FC = () => {
           데이터를 불러오는 중입니다...
         </div>
       ) : error ? (
-        <ErrorMessage message={error} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+          <ErrorMessage message={error} />
+          {error.includes('로그인') && (
+            <SeniorButton variant="secondary" onClick={() => requireAuth('personalization')}>
+              로그인하러 가기
+            </SeniorButton>
+          )}
+        </div>
       ) : model && (
         <>
           {/* 2-Column Dashboard Cards */}

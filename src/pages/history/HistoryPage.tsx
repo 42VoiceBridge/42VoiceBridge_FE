@@ -14,7 +14,7 @@ import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const HistoryPage: React.FC = () => {
-  const { user, setCurrentTab } = useApp();
+  const { user, setCurrentTab, requireAuth } = useApp();
   
   const [recognitions, setRecognitions] = useState<RecognitionResponse[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -117,7 +117,14 @@ export const HistoryPage: React.FC = () => {
           기록을 불러오는 중입니다...
         </div>
       ) : error ? (
-        <ErrorMessage message={error} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+          <ErrorMessage message={error} />
+          {error.includes('로그인') && (
+            <SeniorButton variant="secondary" onClick={() => requireAuth('history')}>
+              로그인하러 가기
+            </SeniorButton>
+          )}
+        </div>
       ) : recognitions.length === 0 ? (
         <div className="vb-empty-state" style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--border-radius-lg)', border: '2px solid var(--color-border)' }}>
           <Mic size={48} color="var(--color-text-muted)" style={{ margin: '0 auto 16px' }} />

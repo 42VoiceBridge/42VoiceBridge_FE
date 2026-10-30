@@ -5,8 +5,8 @@ import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const LoginPage: React.FC = () => {
   const { login, loginWithKakao, setCurrentTab } = useApp();
-  const [email, setEmail] = useState('chaeyeong@example.com');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(() => {
     const kakaoError = sessionStorage.getItem('kakaoLoginError');
     if (kakaoError) sessionStorage.removeItem('kakaoLoginError');

@@ -44,6 +44,31 @@ export class AudioRecorderService {
   private analyser: AnalyserNode | null = null;
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: Blob[] = [];
+  private static activeService: AudioRecorderService | null = null;
+
+  static getActiveService(): AudioRecorderService | null {
+    return AudioRecorderService.activeService;
+  }
+
+  static getActiveStream(): MediaStream | null {
+    return AudioRecorderService.activeService?.mediaStream ?? null;
+  }
+
+  static getActiveAnalyser(): AnalyserNode | null {
+    return AudioRecorderService.activeService?.analyser ?? null;
+  }
+
+  getStream(): MediaStream | null {
+    return this.mediaStream;
+  }
+
+  getMediaStream(): MediaStream | null {
+    return this.mediaStream;
+  }
+
+  getAnalyser(): AnalyserNode | null {
+    return this.analyser;
+  }
 
   async startRecording(onAudioData?: (dataArray: Uint8Array) => void): Promise<boolean> {
     try {
@@ -52,11 +77,16 @@ export class AudioRecorderService {
       
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.audioContext = new AudioContextClass();
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
       this.analyser = this.audioContext.createAnalyser();
       this.analyser.fftSize = 64;
 
       const source = this.audioContext.createMediaStreamSource(this.mediaStream);
       source.connect(this.analyser);
+
+      AudioRecorderService.activeService = this;
 
       this.mediaRecorder = new MediaRecorder(this.mediaStream);
       this.mediaRecorder.ondataavailable = (e) => {
@@ -107,13 +137,18 @@ export class AudioRecorderService {
   }
 
   private cleanup() {
+    if (AudioRecorderService.activeService === this) {
+      AudioRecorderService.activeService = null;
+    }
     if (this.mediaStream) {
       this.mediaStream.getTracks().forEach(track => track.stop());
       this.mediaStream = null;
     }
     if (this.audioContext && this.audioContext.state !== 'closed') {
-      this.audioContext.close();
+      this.audioContext.close().catch(() => {});
       this.audioContext = null;
     }
+    this.analyser = null;
+    this.mediaRecorder = null;
   }
 }

@@ -33,6 +33,10 @@ interface AppContextType {
   user: User | null;
   currentTab: NavTab;
   setCurrentTab: (tab: NavTab) => void;
+  requireAuth: (targetTab?: NavTab) => boolean;
+  isAuthModalOpen: boolean;
+  closeAuthModal: () => void;
+  confirmAuthModal: () => void;
   goBack: () => void;
   login: (email: string, password: string) => Promise<void>;
   loginWithKakao: () => Promise<void>;
@@ -59,14 +63,58 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [currentTab, setCurrentTabState] = useState<NavTab>(() => {
+    if (window.location.pathname === '/auth/kakao/callback') {
+      return 'login';
+    }
     const savedTab = sessionStorage.getItem('currentTab') as NavTab;
-    return savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'login';
+    if (!localStorage.getItem('accessToken') && (savedTab === 'login' || savedTab === 'register')) {
+      const hasRedirect = sessionStorage.getItem('redirectTab');
+      if (!hasRedirect) {
+        return 'dashboard';
+      }
+    }
+    return savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'dashboard';
   });
 
   const setCurrentTab = useCallback((tab: NavTab) => {
     setCurrentTabState(tab);
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
+
+  const resolveRedirectTab = useCallback((): NavTab => {
+    const target = sessionStorage.getItem('redirectTab') as NavTab;
+    sessionStorage.removeItem('redirectTab');
+    if (target && VALID_TABS.includes(target) && target !== 'login' && target !== 'register') {
+      return target;
+    }
+    return 'dashboard';
+  }, []);
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [pendingAuthTarget, setPendingAuthTarget] = useState<NavTab | null>(null);
+
+  const requireAuth = useCallback((targetTab?: NavTab): boolean => {
+    if (user || localStorage.getItem('accessToken')) {
+      return true;
+    }
+    const target = targetTab || (currentTab !== 'login' && currentTab !== 'register' ? currentTab : 'dashboard');
+    setPendingAuthTarget(target);
+    setIsAuthModalOpen(true);
+    return false;
+  }, [user, currentTab]);
+
+  const closeAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+    setPendingAuthTarget(null);
+  }, []);
+
+  const confirmAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+    const target = pendingAuthTarget || (currentTab !== 'login' && currentTab !== 'register' ? currentTab : 'dashboard');
+    sessionStorage.setItem('redirectTab', target);
+    setPendingAuthTarget(null);
+    setCurrentTab('login');
+  }, [pendingAuthTarget, currentTab, setCurrentTab]);
 
   const goBack = useCallback(() => {
     setCurrentTabState('dashboard');
@@ -146,7 +194,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   email: profileRes.data.email ?? '',
                   createdAt: new Date().toISOString().split('T')[0],
                 });
-                setCurrentTab('dashboard');
+                const target = resolveRedirectTab();
+                setCurrentTab(target);
               } else {
                 throw new Error('사용자 정보를 가져오는데 실패했습니다.');
               }
@@ -165,7 +214,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     handleKakaoCallback();
-  }, [setCurrentTab]);
+  }, [setCurrentTab, resolveRedirectTab]);
 
   // Restore login state from localStorage on mount
   useEffect(() => {
@@ -181,7 +230,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 createdAt: new Date().toISOString().split('T')[0],
               });
               if (currentTab === 'login' || currentTab === 'register') {
-                setCurrentTab('dashboard');
+                const target = resolveRedirectTab();
+                setCurrentTab(target);
               }
             }
           })
@@ -190,8 +240,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('userEmail');
+          sessionStorage.removeItem('redirectTab');
           setUser(null);
-          setCurrentTab('login');
+          if (currentTab === 'login' || currentTab === 'register') {
+            setCurrentTab('dashboard');
+          }
         });
     }
   }, []);
@@ -212,7 +265,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             email: profileRes.data.email ?? '',
             createdAt: new Date().toISOString().split('T')[0],
           });
-          setCurrentTab('dashboard');
+          const target = resolveRedirectTab();
+          setCurrentTab(target);
         }
       }
   };
@@ -241,8 +295,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userEmail');
     sessionStorage.removeItem('currentTab');
+    sessionStorage.removeItem('redirectTab');
+    setIsAuthModalOpen(false);
+    setPendingAuthTarget(null);
     setUser(null);
-    setCurrentTab('login');
+    setCurrentTab('dashboard');
   }, [setCurrentTab]);
 
   useEffect(() => {
@@ -259,6 +316,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         user,
         currentTab,
         setCurrentTab,
+        requireAuth,
+        isAuthModalOpen,
+        closeAuthModal,
+        confirmAuthModal,
         goBack,
         login,
         loginWithKakao,

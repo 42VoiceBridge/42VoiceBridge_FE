@@ -11,19 +11,12 @@ import { VoiceAssistPage } from './pages/assist/VoiceAssistPage';
 import { HistoryPage } from './pages/history/HistoryPage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { AppFooter } from './components/layout/AppFooter';
+import { LoginPromptDialog } from './components/common/LoginPromptDialog';
 
 const AppContent: React.FC = () => {
-  const { currentTab, user } = useApp();
+  const { currentTab, isAuthModalOpen, closeAuthModal, confirmAuthModal } = useApp();
 
   const renderCurrentPage = () => {
-    // If not logged in, show auth screens
-    if (!user) {
-      if (currentTab === 'register') {
-        return <RegisterPage />;
-      }
-      return <LoginPage />;
-    }
-
     switch (currentTab) {
       case 'dashboard':
         return <DashboardPage />;
@@ -52,8 +45,13 @@ const AppContent: React.FC = () => {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <AppHeader />
       <main style={{ flex: 1 }}>{renderCurrentPage()}</main>
-
-      {user && <AppFooter />}
+      <AppFooter />
+      {isAuthModalOpen && (
+        <LoginPromptDialog
+          onClose={closeAuthModal}
+          onConfirm={confirmAuthModal}
+        />
+      )}
     </div>
   );
 };

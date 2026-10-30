@@ -16,8 +16,10 @@ import { createRecognitionApi, getRecognitionsApi, confirmRecognitionApi } from 
 import type { RecognitionResponse } from '../../api/recognition';
 import { requestTtsApi, getTtsStatusApi } from '../../api/tts';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
+import { useApp } from '../../context/AppContext';
 
 export const VoiceAssistPage: React.FC = () => {
+  const { requireAuth } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -90,6 +92,9 @@ export const VoiceAssistPage: React.FC = () => {
 
   const handleStartAssistRecord = async () => {
     setRecordingError(null);
+    if (!requireAuth('assist')) {
+      return;
+    }
     const token = localStorage.getItem('accessToken');
     if (!token) {
       setRecordingError('로그인이 필요합니다.');
@@ -309,7 +314,7 @@ export const VoiceAssistPage: React.FC = () => {
         </p>
 
         <div style={{ maxWidth: '480px', margin: '0 auto 28px' }}>
-          <AudioVisualizer isRecording={isRecording} height={76} />
+          <AudioVisualizer isRecording={isRecording} analyser={recorderRef.current?.getAnalyser()} stream={recorderRef.current?.getStream()} height={76} />
         </div>
 
         {recordingError && (

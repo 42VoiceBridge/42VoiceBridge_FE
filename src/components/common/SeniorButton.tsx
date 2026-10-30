@@ -8,7 +8,7 @@ interface SeniorButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
   children: React.ReactNode;
 }
 
-export const SeniorButton: React.FC<SeniorButtonProps> = ({
+export const SeniorButton = React.forwardRef<HTMLButtonElement, SeniorButtonProps>(({
   variant = 'primary',
   size = 'normal',
   fullWidth = false,
@@ -18,7 +18,7 @@ export const SeniorButton: React.FC<SeniorButtonProps> = ({
   style,
   disabled,
   ...props
-}) => {
+}, ref) => {
   const getVariantStyles = (): React.CSSProperties => {
     switch (variant) {
       case 'primary':
@@ -93,6 +93,7 @@ export const SeniorButton: React.FC<SeniorButtonProps> = ({
 
   return (
     <button
+      ref={ref}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -117,4 +118,6 @@ export const SeniorButton: React.FC<SeniorButtonProps> = ({
       <span>{children}</span>
     </button>
   );
-};
+});
+
+SeniorButton.displayName = 'SeniorButton';

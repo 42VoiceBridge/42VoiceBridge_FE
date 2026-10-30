@@ -15,7 +15,7 @@ import type { RecommendationSentence } from '../../api/recommendation';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const PracticePage: React.FC = () => {
-  const { setCurrentTab } = useApp();
+  const { requireAuth } = useApp();
   
   const [sentences, setSentences] = useState<RecommendationSentence[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -118,7 +118,7 @@ export const PracticePage: React.FC = () => {
           <div>
             <SeniorButton variant="primary" onClick={loadRecommendations}>다시 시도</SeniorButton>
             {error.includes('로그인') && (
-              <SeniorButton variant="secondary" onClick={() => setCurrentTab('login')} style={{ marginLeft: '12px' }}>로그인하러 가기</SeniorButton>
+              <SeniorButton variant="secondary" onClick={() => requireAuth('practice')} style={{ marginLeft: '12px' }}>로그인하러 가기</SeniorButton>
             )}
           </div>
         </div>

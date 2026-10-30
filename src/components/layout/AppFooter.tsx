@@ -16,7 +16,7 @@ export const AppFooter = () => {
           <button type="button" onClick={() => setLegalView('terms')}>이용약관</button>
           <button type="button" onClick={() => setLegalView('privacy')}>개인정보처리방침</button>
         </div>
-        <div className="vb-footer-meta"><span>© 2026 VoiceBridge.</span><span>Made by [Team Name]</span></div>
+        <div className="vb-footer-meta"><span>© 2026 VoiceBridge.</span><span>Made by 말이음</span></div>
       </div>
       {legalView && <BrandDialog label={legalView === 'terms' ? '이용약관 안내' : '개인정보처리방침 안내'} className="vb-legal-dialog" onClose={() => setLegalView(null)}>
         <div className="vb-legal-panel">
