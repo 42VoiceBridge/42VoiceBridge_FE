@@ -81,7 +81,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const setCurrentTab = useCallback((tab: NavTab) => {
-    setCurrentTabState(tab);
+    const targetTab = VALID_TABS.includes(tab) ? tab : 'dashboard';
+    setCurrentTabState(targetTab);
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
 

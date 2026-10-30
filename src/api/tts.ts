@@ -46,12 +46,19 @@ export const requestTtsApi = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    let errMsg = 'TTS 요청 중 서버 오류가 발생했습니다.';
-    if (errorData?.error?.message) {
-      errMsg = errorData.error.message;
+    let errMsg = errorData?.error?.message;
+    if (!errMsg) {
+      if (response.status === 503 || errorData?.error?.code === 'TTS_UNAVAILABLE') {
+        errMsg = '잠시 후 다시 눌러 주세요.';
+      } else if (response.status === 429 || errorData?.error?.code === 'TOO_MANY_REQUESTS') {
+        errMsg = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+        errMsg = 'TTS 요청 중 서버 오류가 발생했습니다.';
+      }
     }
     const err: any = new Error(errMsg);
-    err.code = response.status.toString();
+    err.code = errorData?.error?.code || response.status.toString();
+    err.status = response.status;
     throw err;
   }
 
@@ -71,12 +78,19 @@ export const getTtsStatusApi = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    let errMsg = 'TTS 상태 조회 중 서버 오류가 발생했습니다.';
-    if (errorData?.error?.message) {
-      errMsg = errorData.error.message;
+    let errMsg = errorData?.error?.message;
+    if (!errMsg) {
+      if (response.status === 503 || errorData?.error?.code === 'TTS_UNAVAILABLE') {
+        errMsg = '잠시 후 다시 눌러 주세요.';
+      } else if (response.status === 429 || errorData?.error?.code === 'TOO_MANY_REQUESTS') {
+        errMsg = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+        errMsg = 'TTS 상태 조회 중 서버 오류가 발생했습니다.';
+      }
     }
     const err: any = new Error(errMsg);
-    err.code = response.status.toString();
+    err.code = errorData?.error?.code || response.status.toString();
+    err.status = response.status;
     throw err;
   }
 

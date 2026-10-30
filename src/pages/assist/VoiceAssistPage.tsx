@@ -154,12 +154,18 @@ export const VoiceAssistPage: React.FC = () => {
         await fetchRecent();
       }
     } catch (err: any) {
-      if (err.message && (err.message.includes('401') || err.message.includes('403'))) {
+      console.error('Recognition failed:', err);
+      if (err.code === 'STT_UNAVAILABLE' || err.status === 503) {
+        setRecordingError(err.message || '음성 인식 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else if (err.code === 'TOO_MANY_REQUESTS' || err.status === 429) {
+        setRecordingError(err.message || '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+      } else if (err.message && (err.message.includes('401') || err.message.includes('403'))) {
         setRecordingError('인증이 만료되었습니다. 다시 로그인해주세요.');
       } else if (err.message && err.message.includes('400')) {
-        setRecordingError('올바르지 않은 녹음 파일입니다. 다시 말씀해주세요.');
+        setRecordingError(err.message || '올바르지 않은 녹음 파일입니다. 다시 말씀해주세요.');
+      } else if (err.message) {
+        setRecordingError(err.message);
       } else {
-        console.error('Recognition failed:', err);
         setRecordingError('음성을 변환하지 못했습니다. 잠시 후 다시 시도해주세요.');
       }
     } finally {
@@ -265,12 +271,15 @@ export const VoiceAssistPage: React.FC = () => {
     } catch (err: any) {
       if (requestGeneration !== ttsGenerationRef.current) return;
       
-      const code = err.code ? parseInt(err.code, 10) : 0;
-      if (code === 503 || err.message?.includes('503')) {
-        setConversationError('잠시 후 다시 눌러 주세요.');
-      } else if (code >= 400 && code < 500) {
-        setConversationError('음성 출력 요청을 처리하지 못했습니다. 다시 시도해주세요.');
-        console.error('TTS 4xx Error:', err);
+      const is503 = err.code === 'TTS_UNAVAILABLE' || err.status === 503 || err.code === '503';
+      const is429 = err.code === 'TOO_MANY_REQUESTS' || err.status === 429 || err.code === '429';
+
+      if (is503) {
+        setConversationError(err.message || '잠시 후 다시 눌러 주세요.');
+      } else if (is429) {
+        setConversationError(err.message || '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+      } else if (err.message && err.message !== 'TTS_FAILED' && !err.message.includes('TTS 대기 시간 초과')) {
+        setConversationError(err.message);
       } else if (err.message === 'TTS_FAILED') {
         setConversationError('음성을 생성하지 못했습니다. 다시 시도해주세요.');
       } else {
@@ -340,9 +349,18 @@ export const VoiceAssistPage: React.FC = () => {
           <AudioVisualizer isRecording={isRecording} height={76} />
         </div>
 
+        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', marginBottom: '20px' }}>
+          음성 변환 및 AI 처리를 위해 입력된 음성 데이터는 네이버 클라우드 등 외부 서비스로 안전하게 전송될 수 있습니다.
+        </p>
+
         {recordingError && (
           <div style={{ maxWidth: '640px', margin: '0 auto 24px', textAlign: 'left' }}>
-            <ErrorMessage message={recordingError} />
+            <ErrorMessage
+              message={recordingError}
+              autoDismiss={true}
+              duration={4000}
+              onDismiss={() => setRecordingError(null)}
+            />
           </div>
         )}
 
@@ -386,7 +404,14 @@ export const VoiceAssistPage: React.FC = () => {
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {conversationError && <ErrorMessage message={conversationError} />}
+          {conversationError && (
+            <ErrorMessage
+              message={conversationError}
+              autoDismiss={true}
+              duration={4000}
+              onDismiss={() => setConversationError(null)}
+            />
+          )}
           {recentRecognitions.map((msg) => (
             <article className="responsive-panel vb-conversation-row"
               key={msg.recognitionId}
