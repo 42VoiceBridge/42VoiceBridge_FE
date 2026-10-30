@@ -179,7 +179,7 @@ export const PhrasesPage: React.FC = () => {
     if (!requireAuth('phrases')) {
       return;
     }
-    setNewCategoryCode(selectedCategoryCode || categories[0]?.category || 'GREETING');
+    setNewCategoryCode(selectedCategoryCode || categories[0]?.category || 'DAILY');
     setNewText('');
     setAddError(null);
     setIsAddModalOpen(true);

@@ -105,10 +105,10 @@ export const ConversationPage: React.FC = () => {
 
     timerRef.current = setInterval(() => {
       setRecordSeconds((prev) => {
-        if (prev >= 29) {
-          // 30초 도달 시 자동 종료
+        if (prev >= 27) {
+          // 28초 도달 시 여유 있게 자동 종료 (BE 30초 초과 400 AUDIO_TOO_LONG 방지)
           handleStopRecording();
-          return 30;
+          return 28;
         }
         return prev + 1;
       });
@@ -353,7 +353,7 @@ export const ConversationPage: React.FC = () => {
                 1
               </span>
               <span>
-                <strong>녹음 시작:</strong> 상대방이 말할 때 녹음 버튼을 누르면 최대 30초 동안 음성을 듣습니다.
+                <strong>녹음 시작:</strong> 상대방이 말할 때 녹음 버튼을 누르면 최대 28초 동안 음성을 듣습니다.
               </span>
             </div>
 
@@ -498,7 +498,7 @@ export const ConversationPage: React.FC = () => {
               color: 'var(--color-text, #111111)',
             }}
           >
-            {30 - recordSeconds}초 남음
+            {Math.max(0, 28 - recordSeconds)}초 남음
           </h2>
           <p
             style={{
@@ -524,7 +524,7 @@ export const ConversationPage: React.FC = () => {
           >
             <div
               style={{
-                width: `${(recordSeconds / 30) * 100}%`,
+                width: `${(recordSeconds / 28) * 100}%`,
                 height: '100%',
                 backgroundColor: 'var(--color-primary, #2E4F3E)',
                 transition: 'width 1s linear',

@@ -474,7 +474,7 @@ export const VoiceAssistPage: React.FC = () => {
                     border: '1px solid var(--color-secondary-border)',
                   }}
                 >
-                  {msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'} {msg.confidence !== null ? `신뢰도 ${Math.round(msg.confidence * 100)}%` : '(신뢰도 제공 안 됨)'}
+                  {msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'}
                 </span>
               </div>
 

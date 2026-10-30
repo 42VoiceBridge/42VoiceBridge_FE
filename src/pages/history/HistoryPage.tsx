@@ -146,10 +146,10 @@ export const HistoryPage: React.FC = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <TrendingUp size={26} color="var(--color-primary)" />
-              <h2 style={{ fontSize: 'var(--text-2xl)' }}>인식 신뢰도 추이</h2>
+              <h2 style={{ fontSize: 'var(--text-2xl)' }}>최근 인식 추이</h2>
             </div>
             <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '28px' }}>
-              최근 기록된 음성 인식의 신뢰도(0~100점) 변화를 보여줍니다.
+              최근 기록된 음성 인식 내역을 순서대로 보여줍니다.
             </p>
 
             <div className="history-chart"
@@ -168,8 +168,6 @@ export const HistoryPage: React.FC = () => {
                 .slice(0, 10)
                 .reverse()
                 .map((item, index, arr) => {
-                  const score = item.confidence !== null ? Math.round(item.confidence * 100) : null;
-                  const heightPercent = score !== null ? Math.round((score / 100) * 160) : 0;
                   const isLatest = index === arr.length - 1;
 
                   return (
@@ -185,17 +183,17 @@ export const HistoryPage: React.FC = () => {
                     >
                       <span
                         style={{
-                          fontSize: 'var(--text-base)',
-                          fontWeight: 900,
+                          fontSize: 'var(--text-sm)',
+                          fontWeight: 700,
                           color: isLatest ? 'var(--color-primary)' : 'var(--color-text-muted)',
                         }}
                       >
-                        {score !== null ? `${score}점` : '-'}
+                        #{index + 1}
                       </span>
                       <div
                         style={{
                           width: '42px',
-                          height: `${heightPercent}px`,
+                          height: isLatest ? '140px' : '90px',
                           borderRadius: '8px 8px 0 0',
                           backgroundColor: isLatest ? 'var(--color-primary)' : 'var(--color-border)',
                           boxShadow: isLatest ? 'var(--shadow-md)' : 'none',
@@ -220,7 +218,6 @@ export const HistoryPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {recognitions.map((item) => {
                 const isExpanded = expandedId === item.recognitionId;
-                const score = item.confidence !== null ? Math.round(item.confidence * 100) : null;
 
                 return (
                   <article className="vb-history-row"
@@ -246,15 +243,6 @@ export const HistoryPage: React.FC = () => {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                        <div
-                          style={{
-                            fontSize: 'var(--text-2xl)',
-                            fontWeight: 900,
-                            color: 'var(--color-primary)',
-                          }}
-                        >
-                          {score !== null ? `${score}점` : 'N/A'}
-                        </div>
                         <div>
                           <div style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--color-text-title)' }}>
                             {item.recognizedText.length > 20 ? item.recognizedText.substring(0, 20) + '...' : item.recognizedText}

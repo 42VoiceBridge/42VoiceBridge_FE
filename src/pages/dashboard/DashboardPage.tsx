@@ -123,7 +123,7 @@ export const DashboardPage = () => {
         <details><summary><span>{user?.name}님의 최근 대화</span><span className="vb-recent-hint">대화 결과 보기 <ArrowDown size={20} /></span></summary>
           <div className="vb-recent-list">{recentRecognitions.map(msg => <article key={msg.recognitionId}>
             <p className="vb-eyebrow">
-              {msg.createdAt && !Number.isNaN(new Date(msg.createdAt).getTime()) && `${new Date(msg.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })} · `}{msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'} {msg.confidence !== null ? `신뢰도 ${Math.round(msg.confidence * 100)}%` : '(신뢰도 제공 안 됨)'}
+              {msg.createdAt && !Number.isNaN(new Date(msg.createdAt).getTime()) && `${new Date(msg.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })} · `}{msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'}
             </p>
             <p className="vb-recent-text">“{msg.recognizedText}”</p>
             <div className="vb-recent-actions">
