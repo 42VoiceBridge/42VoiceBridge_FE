@@ -8,7 +8,9 @@ import {
   Maximize2,
   X,
   Info,
+  Sparkles,
 } from 'lucide-react';
+import { isConversationModeEnabled } from '../../utils/featureFlags';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
@@ -21,7 +23,7 @@ import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { useApp } from '../../context/AppContext';
 
 export const VoiceAssistPage: React.FC = () => {
-  const { requireAuth } = useApp();
+  const { requireAuth, setCurrentTab } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -321,6 +323,39 @@ export const VoiceAssistPage: React.FC = () => {
           음성 재생(또렷하게 들려주기)을 이용할 때 확인된 문장 텍스트가 음성 합성을 위해 <strong>네이버 클라우드 CLOVA Voice로 전송</strong>됩니다.
         </div>
       </section>
+
+      {/* AI 대화 모드 바로가기 (기능 플래그 켜진 경우에만 노출) */}
+      {isConversationModeEnabled() && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 20px',
+            backgroundColor: 'rgba(46,79,62,0.06)',
+            borderRadius: 'var(--border-radius-md)',
+            border: '1px solid rgba(46,79,62,0.2)',
+            marginBottom: '24px',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Sparkles size={20} color="var(--color-primary)" />
+            <span style={{ fontSize: 'var(--text-base)', fontWeight: 600 }}>
+              상대방의 말을 듣고 AI 추천 답변으로 대화하고 싶으신가요?
+            </span>
+          </div>
+          <SeniorButton
+            variant="outline"
+            size="normal"
+            onClick={() => setCurrentTab('conversation')}
+            style={{ fontWeight: 700 }}
+          >
+            AI 대화 모드 시작하기
+          </SeniorButton>
+        </div>
+      )}
 
       {/* Main Microphone Interaction Box */}
       <div className="responsive-panel vb-function-stage vb-microphone-stage"

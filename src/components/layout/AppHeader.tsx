@@ -5,13 +5,23 @@ import type { NavTab } from '../../context/AppContext';
 import { AccessibilityBar } from '../common/AccessibilityBar';
 import { BrandDialog } from '../common/BrandDialog';
 
-const navItems: { id: NavTab; label: string; english: string }[] = [
-  { id: 'dashboard', label: '홈', english: 'Home' },
-  { id: 'assist', label: '실시간 대화', english: 'Voice Assist' },
-  { id: 'phrases', label: '자주 쓰는 문구', english: 'Quick Phrases' },
-  { id: 'history', label: '기록', english: 'History' },
-  { id: 'settings', label: '설정', english: 'Settings' },
-];
+import { isConversationModeEnabled } from '../../utils/featureFlags';
+
+const getNavItems = (): { id: NavTab; label: string; english: string }[] => {
+  const items: { id: NavTab; label: string; english: string }[] = [
+    { id: 'dashboard', label: '홈', english: 'Home' },
+    { id: 'assist', label: '실시간 대화', english: 'Voice Assist' },
+    { id: 'phrases', label: '자주 쓰는 문구', english: 'Quick Phrases' },
+  ];
+  if (isConversationModeEnabled()) {
+    items.push({ id: 'conversation', label: 'AI 대화 모드', english: 'AI Conversation' });
+  }
+  items.push(
+    { id: 'history', label: '기록', english: 'History' },
+    { id: 'settings', label: '설정', english: 'Settings' }
+  );
+  return items;
+};
 
 export const AppHeader = () => {
   const { user, currentTab, setCurrentTab, logout, openOnboarding } = useApp();
@@ -45,7 +55,7 @@ export const AppHeader = () => {
             <button className="vb-icon-button" aria-label="메뉴 닫기" onClick={() => setOpenPanel(null)}><X size={26} /></button>
           </div>
           <nav aria-label="주요 메뉴">
-            {navItems.map((item,index) => <button key={item.id} onClick={() => navigate(item.id)}
+            {getNavItems().map((item,index) => <button key={item.id} onClick={() => navigate(item.id)}
               aria-current={currentTab === item.id ? 'page' : undefined}>
               <span className="vb-nav-index">0{index + 1}</span><span>{item.label}</span><small>{item.english}</small><ArrowUpRight size={22} />
             </button>)}

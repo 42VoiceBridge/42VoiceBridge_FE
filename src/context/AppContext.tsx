@@ -4,10 +4,13 @@ import type {
   FontSizeLevel,
 } from '../types';
 
+import { isConversationModeEnabled } from '../utils/featureFlags';
+
 export type NavTab =
   | 'dashboard'
   | 'assist'
   | 'phrases'
+  | 'conversation'
   | 'history'
   | 'login'
   | 'register'
@@ -17,16 +20,22 @@ export type NavTab =
   | 'personalization'
   | 'personal';
 
-// 실제 활성화되어 화면/메뉴에서 이동 가능한 탭 목록
-const VALID_TABS: NavTab[] = [
-  'dashboard',
-  'assist',
-  'phrases',
-  'history',
-  'login',
-  'register',
-  'settings'
-];
+// 실제 활성화되어 화면/메뉴에서 이동 가능한 탭 목록 반환
+export const getValidTabs = (): NavTab[] => {
+  const tabs: NavTab[] = [
+    'dashboard',
+    'assist',
+    'phrases',
+    'history',
+    'login',
+    'register',
+    'settings',
+  ];
+  if (isConversationModeEnabled()) {
+    tabs.splice(3, 0, 'conversation');
+  }
+  return tabs;
+};
 
 
 
@@ -77,11 +86,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return 'dashboard';
       }
     }
-    return savedTab && VALID_TABS.includes(savedTab) ? savedTab : 'dashboard';
+    return savedTab && getValidTabs().includes(savedTab) ? savedTab : 'dashboard';
   });
 
   const setCurrentTab = useCallback((tab: NavTab) => {
-    const targetTab = VALID_TABS.includes(tab) ? tab : 'dashboard';
+    const targetTab = getValidTabs().includes(tab) ? tab : 'dashboard';
     setCurrentTabState(targetTab);
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, []);
@@ -89,7 +98,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resolveRedirectTab = useCallback((): NavTab => {
     const target = sessionStorage.getItem('redirectTab') as NavTab;
     sessionStorage.removeItem('redirectTab');
-    if (target && VALID_TABS.includes(target) && target !== 'login' && target !== 'register') {
+    if (target && getValidTabs().includes(target) && target !== 'login' && target !== 'register') {
       return target;
     }
     return 'dashboard';

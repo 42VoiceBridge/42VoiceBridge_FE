@@ -216,6 +216,23 @@ export class AudioRecorderService {
     });
   }
 
+  stopRecordingBlob(): Promise<{ blob: Blob; mimeType: string } | null> {
+    return new Promise((resolve) => {
+      if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+        this.mediaRecorder.onstop = () => {
+          const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+          const audioBlob = new Blob(this.audioChunks, { type: mimeType });
+          this.cleanup();
+          resolve({ blob: audioBlob, mimeType });
+        };
+        this.mediaRecorder.stop();
+      } else {
+        this.cleanup();
+        resolve(null);
+      }
+    });
+  }
+
   private cleanup() {
     if (AudioRecorderService.activeService === this) {
       AudioRecorderService.activeService = null;

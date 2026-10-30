@@ -111,9 +111,16 @@ export const addPhraseApi = async (
     const errorData = await response.json().catch(() => ({}));
     let message = errorData?.error?.message;
     if (!message) {
-      if (response.status === 409 || errorData?.error?.code === 'DUPLICATE_PHRASE' || errorData?.error?.code === 'PHRASE_LIMIT_EXCEEDED') {
-        message = '이미 등록된 문구이거나 최대 문구 개수를 초과했습니다.';
-      } else if (response.status === 429 || errorData?.error?.code === 'TOO_MANY_REQUESTS') {
+      const code = errorData?.error?.code;
+      if (response.status === 409 || code === 'DUPLICATE_PHRASE' || code === 'PHRASE_DUPLICATED' || code === 'PHRASE_LIMIT_EXCEEDED') {
+        if (code === 'DUPLICATE_PHRASE' || code === 'PHRASE_DUPLICATED') {
+          message = '이미 등록된 문구입니다.';
+        } else if (code === 'PHRASE_LIMIT_EXCEEDED') {
+          message = '문구는 최대 100개까지 등록할 수 있습니다.';
+        } else {
+          message = '이미 등록된 문구이거나 최대 문구 개수(100개)를 초과했습니다.';
+        }
+      } else if (response.status === 429 || code === 'TOO_MANY_REQUESTS') {
         message = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
       } else {
         message = '문구 추가 중 오류가 발생했습니다.';
