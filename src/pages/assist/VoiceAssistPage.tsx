@@ -7,11 +7,13 @@ import {
   Check,
   Maximize2,
   X,
+  Info,
 } from 'lucide-react';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
-import { speakText, AudioRecorderService } from '../../utils/audioUtils';
+import { speakText, AudioRecorderService, playAudioFromUrl } from '../../utils/audioUtils';
+
 import { createRecognitionApi, getRecognitionsApi, confirmRecognitionApi } from '../../api/recognition';
 import type { RecognitionResponse } from '../../api/recognition';
 import { requestTtsApi, getTtsStatusApi } from '../../api/tts';
@@ -257,16 +259,16 @@ export const VoiceAssistPage: React.FC = () => {
         throw new Error('TTS 대기 시간 초과 또는 URL 없음');
       }
 
-      // NOTE: LocalFileStorageAdapter does not serve the HTTP route for audioUrl yet.
-      // For safety, we report this and fallback to Browser SpeechSynthesis for now.
-      console.warn('Backend에서 audioUrl serving 설정 확인 필요:', audioUrl);
-      throw new Error('Backend에서 audioUrl serving 설정 확인 필요');
+      // 15, 16. local 환경 Bearer 인증 및 fetch -> Blob URL 재생, 종료/정리 시 revoke
+      await playAudioFromUrl(audioUrl, token);
       
     } catch (err: any) {
       if (requestGeneration !== ttsGenerationRef.current) return;
       
       const code = err.code ? parseInt(err.code, 10) : 0;
-      if (code >= 400 && code < 500) {
+      if (code === 503 || err.message?.includes('503')) {
+        setConversationError('잠시 후 다시 눌러 주세요.');
+      } else if (code >= 400 && code < 500) {
         setConversationError('음성 출력 요청을 처리하지 못했습니다. 다시 시도해주세요.');
         console.error('TTS 4xx Error:', err);
       } else if (err.message === 'TTS_FAILED') {
@@ -290,6 +292,27 @@ export const VoiceAssistPage: React.FC = () => {
   return (
     <div className="vb-theme vb-page vb-page--assist responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
       <FeaturePageHeader eyebrow="VOICE ASSIST / COMMUNICATION" title={<>당신의 말을,<br /><span>더 선명하게.</span></>} description="당신의 목소리를 듣고, 이해하기 쉬운 문장과 음성으로 전달합니다." />
+
+      {/* 14. 개인정보 안내 */}
+      <section
+        aria-label="음성 합성 안내"
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '12px',
+          padding: '14px 18px',
+          backgroundColor: 'var(--color-bg-subtle)',
+          borderRadius: 'var(--border-radius-md)',
+          border: '1px solid var(--color-border)',
+          marginBottom: '24px',
+        }}
+      >
+        <Info size={20} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
+        <div style={{ fontSize: 'var(--text-sm)', lineHeight: '1.5', color: 'var(--color-text-secondary)' }}>
+          음성 재생(또렷하게 들려주기)을 이용할 때 확인된 문장 텍스트가 음성 합성을 위해 <strong>네이버 클라우드 CLOVA Voice로 전송</strong>됩니다.
+        </div>
+      </section>
+
       {/* Main Microphone Interaction Box */}
       <div className="responsive-panel vb-function-stage vb-microphone-stage"
         style={{
@@ -314,7 +337,7 @@ export const VoiceAssistPage: React.FC = () => {
         </p>
 
         <div style={{ maxWidth: '480px', margin: '0 auto 28px' }}>
-          <AudioVisualizer isRecording={isRecording} analyser={recorderRef.current?.getAnalyser()} stream={recorderRef.current?.getStream()} height={76} />
+          <AudioVisualizer isRecording={isRecording} height={76} />
         </div>
 
         {recordingError && (

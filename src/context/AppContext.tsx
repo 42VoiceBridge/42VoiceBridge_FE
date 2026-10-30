@@ -6,28 +6,29 @@ import type {
 
 export type NavTab =
   | 'dashboard'
-  | 'diagnosis'
-  | 'practice'
-  | 'personalization'
   | 'assist'
+  | 'phrases'
   | 'history'
   | 'login'
   | 'register'
-  | 'personal'
-  | 'settings';
+  | 'settings'
+  | 'diagnosis'
+  | 'practice'
+  | 'personalization'
+  | 'personal';
 
+// 실제 활성화되어 화면/메뉴에서 이동 가능한 탭 목록
 const VALID_TABS: NavTab[] = [
   'dashboard',
-  'diagnosis',
-  'practice',
-  'personalization',
   'assist',
+  'phrases',
   'history',
   'login',
   'register',
-  'personal',
   'settings'
 ];
+
+
 
 interface AppContextType {
   user: User | null;

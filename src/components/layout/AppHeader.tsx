@@ -8,8 +8,7 @@ import { BrandDialog } from '../common/BrandDialog';
 const navItems: { id: NavTab; label: string; english: string }[] = [
   { id: 'dashboard', label: '홈', english: 'Home' },
   { id: 'assist', label: '실시간 대화', english: 'Voice Assist' },
-  { id: 'personalization', label: 'AI 학습', english: 'Your AI' },
-  { id: 'diagnosis', label: '발음 분석', english: 'Speech' },
+  { id: 'phrases', label: '자주 쓰는 문구', english: 'Quick Phrases' },
   { id: 'history', label: '기록', english: 'History' },
   { id: 'settings', label: '설정', english: 'Settings' },
 ];
@@ -47,7 +46,7 @@ export const AppHeader = () => {
           </div>
           <nav aria-label="주요 메뉴">
             {navItems.map((item,index) => <button key={item.id} onClick={() => navigate(item.id)}
-              aria-current={currentTab === item.id || (item.id === 'diagnosis' && currentTab === 'practice') ? 'page' : undefined}>
+              aria-current={currentTab === item.id ? 'page' : undefined}>
               <span className="vb-nav-index">0{index + 1}</span><span>{item.label}</span><small>{item.english}</small><ArrowUpRight size={22} />
             </button>)}
           </nav>

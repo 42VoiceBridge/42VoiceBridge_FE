@@ -37,6 +37,86 @@ export const stopSpeech = () => {
   }
 };
 
+let currentAudioInstance: HTMLAudioElement | null = null;
+let currentRevokeUrl: string | null = null;
+
+export const stopAudioPlayback = () => {
+  if (currentAudioInstance) {
+    currentAudioInstance.pause();
+    currentAudioInstance.src = '';
+    currentAudioInstance = null;
+  }
+  if (currentRevokeUrl) {
+    URL.revokeObjectURL(currentRevokeUrl);
+    currentRevokeUrl = null;
+  }
+};
+
+/**
+ * audioUrl을 받아 필요 시 Bearer 인증을 거쳐 Blob URL로 변환 후 재생합니다.
+ * 재생 완료, 오류 발생, 또는 중단 시 URL.revokeObjectURL로 메모리를 해제합니다.
+ */
+export const playAudioFromUrl = async (
+  audioUrl: string,
+  accessToken?: string | null
+): Promise<void> => {
+  stopAudioPlayback();
+  stopSpeech();
+
+  // local 백엔드 경로 또는 API 엔드포인트인 경우에만 Bearer 인증 헤더 추가
+  // (S3 Presigned URL의 경우 Bearer 헤더가 있으면 400 Bad Request가 발생할 수 있음)
+  const isLocalBackend =
+    audioUrl.includes('localhost') ||
+    audioUrl.includes('127.0.0.1') ||
+    audioUrl.startsWith('/api/') ||
+    audioUrl.includes('/api/v1/');
+
+  const headers: HeadersInit = {};
+  if (isLocalBackend && accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+
+  const response = await fetch(audioUrl, { headers });
+  if (!response.ok) {
+    throw new Error(`오디오 파일을 불러오지 못했습니다. (${response.status})`);
+  }
+
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  currentRevokeUrl = blobUrl;
+
+  return new Promise((resolve, reject) => {
+    const audio = new Audio(blobUrl);
+    currentAudioInstance = audio;
+
+    const cleanup = () => {
+      if (currentRevokeUrl === blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        currentRevokeUrl = null;
+      }
+      if (currentAudioInstance === audio) {
+        currentAudioInstance = null;
+      }
+    };
+
+    audio.onended = () => {
+      cleanup();
+      resolve();
+    };
+
+    audio.onerror = () => {
+      cleanup();
+      reject(new Error('오디오 재생 중 오류가 발생했습니다.'));
+    };
+
+    audio.play().catch((err) => {
+      cleanup();
+      reject(err);
+    });
+  });
+};
+
+
 // Microphone & Waveform Visualizer
 export class AudioRecorderService {
   private mediaStream: MediaStream | null = null;
