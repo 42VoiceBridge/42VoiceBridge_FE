@@ -63,16 +63,37 @@ export const playAudioFromUrl = async (
   stopAudioPlayback();
   stopSpeech();
 
-  // local 백엔드 경로 또는 API 엔드포인트인 경우에만 Bearer 인증 헤더 추가
-  // (S3 Presigned URL의 경우 Bearer 헤더가 있으면 400 Bad Request가 발생할 수 있음)
-  const isLocalBackend =
-    audioUrl.includes('localhost') ||
-    audioUrl.includes('127.0.0.1') ||
-    audioUrl.startsWith('/api/') ||
-    audioUrl.includes('/api/v1/');
+  // local 프로파일 재생 주소만 Bearer가 필요하다.
+  // 운영의 S3 임시 주소는 fetch하지 않고 바로 재생한다(미디어 요소는 CORS를 검사하지 않는다).
+  const needsAuth = audioUrl.includes('/api/v1/');
 
+  if (!needsAuth) {
+    const audio = new Audio(audioUrl);
+    currentAudioInstance = audio;
+    return new Promise<void>((resolve, reject) => {
+      const done = () => {
+        if (currentAudioInstance === audio) {
+          currentAudioInstance = null;
+        }
+      };
+      audio.onended = () => {
+        done();
+        resolve();
+      };
+      audio.onerror = () => {
+        done();
+        reject(new Error('오디오 재생 중 오류가 발생했습니다.'));
+      };
+      audio.play().catch((err) => {
+        done();
+        reject(err);
+      });
+    });
+  }
+
+  // 아래는 local 주소용 (/api/v1/) fetch + Blob 방식
   const headers: HeadersInit = {};
-  if (isLocalBackend && accessToken) {
+  if (accessToken) {
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
@@ -168,7 +189,13 @@ export class AudioRecorderService {
 
       AudioRecorderService.activeService = this;
 
-      this.mediaRecorder = new MediaRecorder(this.mediaStream);
+      // 브라우저별 지원 MIME 타입 확인 (webm opus 또는 mp4)
+      const preferred = ['audio/webm;codecs=opus', 'audio/mp4'];
+      const mimeType = preferred.find((t) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t));
+      this.mediaRecorder = mimeType
+        ? new MediaRecorder(this.mediaStream, { mimeType })
+        : new MediaRecorder(this.mediaStream);
+
       this.mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           this.audioChunks.push(e.data);
@@ -203,7 +230,8 @@ export class AudioRecorderService {
     return new Promise((resolve) => {
       if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
         this.mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+          const mimeType = this.mediaRecorder?.mimeType || 'audio/webm';
+          const audioBlob = new Blob(this.audioChunks, { type: mimeType });
           const audioUrl = URL.createObjectURL(audioBlob);
           this.cleanup();
           resolve(audioUrl);

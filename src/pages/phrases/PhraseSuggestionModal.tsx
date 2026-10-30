@@ -149,7 +149,8 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
       });
 
       if (res.success && res.data) {
-        return { phraseId: res.data.phraseId, text: res.data.text };
+        const phraseId = res.data.id || res.data.phraseId || '';
+        return { phraseId, text: res.data.text };
       }
       throw new Error('문구 저장 응답이 올바르지 않습니다.');
     } catch (err: unknown) {

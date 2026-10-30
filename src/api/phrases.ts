@@ -1,6 +1,23 @@
 import { API_BASE_URL } from './config';
 import { authFetch } from './auth';
 
+// 화면 이름은 응답에 없다. 순서는 BE 카테고리 선언 순서와 같다.
+export const CATEGORY_LABELS: Record<string, string> = {
+  HOSPITAL: '병원',
+  RESTAURANT: '식당',
+  PHARMACY: '약국',
+  STORE: '마트·편의점',
+  TRANSPORT: '교통',
+  DAILY: '일상·긴급',
+};
+
+export interface BePhrase {
+  id: string;
+  category: string;
+  text: string;
+  isDefault: boolean;
+}
+
 export interface PhraseItem {
   phraseId: string;
   text: string;
@@ -32,10 +49,13 @@ export interface AddPhrasePayload {
 export interface AddPhraseResponse {
   success: boolean;
   data?: {
-    phraseId: string;
+    id: string;
     category: string;
     text: string;
-    custom: boolean;
+    isDefault: boolean;
+    // 하위 호환성 필드
+    phraseId?: string;
+    custom?: boolean;
   };
   error?: {
     code: string;
@@ -46,8 +66,10 @@ export interface AddPhraseResponse {
 export interface SpeakPhraseResponse {
   success: boolean;
   data?: {
-    phraseId: string;
+    id: string;
     audioUrl: string;
+    // 하위 호환성 필드
+    phraseId?: string;
   };
   error?: {
     code: string;
@@ -69,6 +91,8 @@ export class PhraseApiError extends Error {
 
 /**
  * 자주 쓰는 문구 목록 조회 (GET /api/v1/phrases?category=)
+ * BE는 data로 [{ id, category, text, isDefault }] 평평한 배열을 반환하므로,
+ * FE 화면 코드가 그대로 동작할 수 있도록 CATEGORY_LABELS 순서에 따라 카테고리별 묶음으로 변환합니다.
  */
 export const getPhrasesApi = async (
   accessToken: string,
@@ -88,11 +112,22 @@ export const getPhrasesApi = async (
     throw new PhraseApiError(message, response.status, errorData?.error?.code);
   }
 
-  return response.json();
+  const body: { success: boolean; data?: BePhrase[]; error?: { code: string; message: string } } = await response.json();
+  const items = body.data ?? [];
+  const categories = Object.keys(CATEGORY_LABELS).map((code) => ({
+    category: code,
+    label: CATEGORY_LABELS[code],
+    phrases: items
+      .filter((p) => p.category === code)
+      .map((p) => ({ phraseId: p.id, text: p.text, custom: !p.isDefault })),
+  }));
+
+  return { success: body.success, data: { categories } };
 };
 
 /**
  * 문구 추가 (POST /api/v1/phrases)
+ * 응답: { id, category, text, isDefault }
  */
 export const addPhraseApi = async (
   accessToken: string,
@@ -129,7 +164,12 @@ export const addPhraseApi = async (
     throw new PhraseApiError(message, response.status, errorData?.error?.code);
   }
 
-  return response.json();
+  const body: AddPhraseResponse = await response.json();
+  if (body.data && body.data.id) {
+    body.data.phraseId = body.data.id;
+    body.data.custom = !body.data.isDefault;
+  }
+  return body;
 };
 
 /**
@@ -159,6 +199,7 @@ export const deletePhraseApi = async (
 /**
  * 문구 말하기 (POST /api/v1/phrases/{phraseId}/speak)
  * 동기 API - 즉시 audioUrl 반환 (임시 주소이므로 저장/재사용하지 않고 매번 호출)
+ * 응답: { id, audioUrl }
  */
 export const speakPhraseApi = async (
   accessToken: string,
@@ -186,5 +227,10 @@ export const speakPhraseApi = async (
     throw new PhraseApiError(message, response.status, errorData?.error?.code);
   }
 
-  return response.json();
+  const body: SpeakPhraseResponse = await response.json();
+  if (body.data && body.data.id) {
+    body.data.phraseId = body.data.id;
+  }
+  return body;
 };
+
