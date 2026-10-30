@@ -6,6 +6,7 @@ export interface RecognitionResponse {
   recognizedText: string;
   modelUsed: string;
   confidence: number | null;
+  createdAt?: string | null;
 }
 
 export interface RecognitionHistoryResponse {

@@ -30,9 +30,10 @@ import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 type Step = 'intro' | 'recording' | 'analyzing' | 'result';
+const ANALYSIS_TIMEOUT_MS = 90_000;
 
 export const DiagnosisPage: React.FC = () => {
-  const { setCurrentTab } = useApp();
+  const { setCurrentTab, requireAuth } = useApp();
   const [step, setStep] = useState<Step>('intro');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
@@ -58,13 +59,23 @@ export const DiagnosisPage: React.FC = () => {
   const recorderRef = useRef<AudioRecorderService | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingGenerationRef = useRef(0);
+
+  const stopPolling = () => {
+    pollingGenerationRef.current += 1;
+    if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+    if (pollingTimeoutRef.current) clearTimeout(pollingTimeoutRef.current);
+    pollingTimerRef.current = null;
+    pollingTimeoutRef.current = null;
+  };
 
   const currentSentence = sentences[currentIndex];
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+      stopPolling();
       if (recorderRef.current) {
         recorderRef.current.stopRecording().catch(() => {});
       }
@@ -73,7 +84,11 @@ export const DiagnosisPage: React.FC = () => {
 
   // 1. Intro -> Start
   const handleStartDiagnosis = async () => {
+    stopPolling();
     setError(null);
+    if (!requireAuth('diagnosis')) {
+      return;
+    }
     const token = localStorage.getItem('accessToken');
     if (!token) {
       setError('로그인이 필요합니다.');
@@ -204,25 +219,32 @@ export const DiagnosisPage: React.FC = () => {
   };
 
   // 5. Poll session status
-  const pollSessionStatus = async () => {
+  const pollSessionStatus = () => {
     if (!sessionId) return;
     const token = localStorage.getItem('accessToken');
-    if (!token) return;
-
-    if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
-
-    pollingTimerRef.current = setInterval(async () => {
+    stopPolling();
+    if (!token) {
+      setError('인증이 만료되었습니다. 다시 로그인해주세요.');
+      return;
+    }
+    setError(null);
+    const generation = pollingGenerationRef.current;
+    let requestInFlight = false;
+    const checkStatus = async () => {
+      if (requestInFlight || generation !== pollingGenerationRef.current) return;
+      requestInFlight = true;
       try {
         const res = await getDiagnosisSessionApi(token, sessionId);
+        if (generation !== pollingGenerationRef.current) return;
         if (res.success && res.data) {
           if (res.data.status === 'ANALYZED') {
-            if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+            stopPolling();
             fetchResults();
           } else {
             // Check if any sentence is FAILED.
             const failedSentence = res.data.sentences.find(s => s.recordingStatus === 'FAILED');
             if (failedSentence) {
-               if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+               stopPolling();
                setError('일부 녹음의 분석에 실패했습니다. 해당 문장을 다시 녹음해주세요.');
                // Re-route to the failed sentence
                const failedIndex = sentences.findIndex(s => s.sentenceId === failedSentence.sentenceId);
@@ -236,12 +258,22 @@ export const DiagnosisPage: React.FC = () => {
         }
       } catch (e: any) {
         // Just log or silently retry, but if it's auth error we should stop
+        if (generation !== pollingGenerationRef.current) return;
         if (e.message && (e.message.includes('401') || e.message.includes('403'))) {
-          if (pollingTimerRef.current) clearInterval(pollingTimerRef.current);
+          stopPolling();
           setError('인증이 만료되었습니다. 다시 로그인해주세요.');
         }
+      } finally {
+        requestInFlight = false;
       }
-    }, 2500);
+    };
+    pollingTimerRef.current = setInterval(checkStatus, 2500);
+    pollingTimeoutRef.current = setTimeout(() => {
+      if (generation !== pollingGenerationRef.current) return;
+      stopPolling();
+      setError('분석 결과 확인 시간이 초과되었습니다. 다시 시도해주세요.');
+    }, ANALYSIS_TIMEOUT_MS);
+    void checkStatus();
   };
 
   // 6. Fetch results
@@ -546,7 +578,7 @@ export const DiagnosisPage: React.FC = () => {
           </div>
 
           <div style={{ marginBottom: '28px' }}>
-            <AudioVisualizer isRecording={isRecording} height={70} />
+            <AudioVisualizer isRecording={isRecording} analyser={recorderRef.current?.getAnalyser()} stream={recorderRef.current?.getStream()} height={70} />
             <div style={{ marginTop: '12px', fontSize: 'var(--text-lg)', fontWeight: 700 }}>
               {isRecording ? (
                 <span style={{ color: 'var(--color-danger)' }}>
@@ -623,7 +655,7 @@ export const DiagnosisPage: React.FC = () => {
           }}
         >
           <div
-            className="animate-spin-slow"
+            className={error ? undefined : 'animate-spin-slow'}
             style={{
               width: '80px',
               height: '80px',
@@ -640,6 +672,11 @@ export const DiagnosisPage: React.FC = () => {
             잠시만 기다려주세요!
           </p>
           {error && <div style={{ marginTop: '24px', textAlign: 'left' }}><ErrorMessage message={error} /></div>}
+          {error && <div style={{ marginTop: '20px' }}>
+            <SeniorButton variant="primary" size="large" onClick={pollSessionStatus}>
+              결과 다시 확인하기
+            </SeniorButton>
+          </div>}
         </div>
       </div>
     );

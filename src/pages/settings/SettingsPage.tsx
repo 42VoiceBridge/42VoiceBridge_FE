@@ -15,7 +15,8 @@ export const SettingsPage: React.FC = () => {
     setAutoTtsPlayback,
     speechRate,
     setSpeechRate,
-    logout 
+    logout,
+    requireAuth 
   } = useApp();
 
   return (
@@ -131,8 +132,14 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
             <div className="settings-options" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <SeniorButton variant="outline" size="normal" icon={<LogOut size={20} />} onClick={logout}>로그아웃</SeniorButton>
-              <SeniorButton variant="ghost" size="normal" disabled={true} style={{ color: 'var(--color-text-muted)' }}>회원 탈퇴 (기능 준비 중)</SeniorButton>
+              {user ? (
+                <>
+                  <SeniorButton variant="outline" size="normal" icon={<LogOut size={20} />} onClick={logout}>로그아웃</SeniorButton>
+                  <SeniorButton variant="ghost" size="normal" disabled={true} style={{ color: 'var(--color-text-muted)' }}>회원 탈퇴 (기능 준비 중)</SeniorButton>
+                </>
+              ) : (
+                <SeniorButton variant="primary" size="normal" icon={<User size={20} />} onClick={() => requireAuth('settings')}>로그인하기</SeniorButton>
+              )}
             </div>
           </div>
         </section>

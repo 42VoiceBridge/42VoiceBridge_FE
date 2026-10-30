@@ -8,8 +8,7 @@ import { BrandDialog } from '../common/BrandDialog';
 const navItems: { id: NavTab; label: string; english: string }[] = [
   { id: 'dashboard', label: '홈', english: 'Home' },
   { id: 'assist', label: '실시간 대화', english: 'Voice Assist' },
-  { id: 'personalization', label: 'AI 학습', english: 'Your AI' },
-  { id: 'diagnosis', label: '발음 분석', english: 'Speech' },
+  { id: 'phrases', label: '자주 쓰는 문구', english: 'Quick Phrases' },
   { id: 'history', label: '기록', english: 'History' },
   { id: 'settings', label: '설정', english: 'Settings' },
 ];
@@ -18,30 +17,26 @@ export const AppHeader = () => {
   const { user, currentTab, setCurrentTab, logout } = useApp();
   const [openPanel, setOpenPanel] = useState<'menu' | 'account' | null>(null);
   const navigate = (tab: NavTab) => { setCurrentTab(tab); setOpenPanel(null); };
-  if (!user) {
-    return (
-      <header className="vb-theme vb-header">
-        <div className="vb-header-inner" style={{ display: 'flex', justifyContent: 'center' }}>
-          <button className="vb-wordmark" aria-label="VoiceBridge 홈" style={{ pointerEvents: 'none' }}>
-            VOICE<span>BRIDGE</span><i aria-hidden="true">∿</i>
-          </button>
-        </div>
-      </header>
-    );
-  }
 
   return (
     <header className="vb-theme vb-header">
       {currentTab === 'dashboard' && <a className="vb-skip-link" href="#voicebridge-content">본문으로 이동</a>}
       <div className="vb-header-inner">
-        <button className="vb-header-action" aria-label="메뉴 열기" aria-expanded={openPanel === 'menu'} aria-haspopup="dialog" onClick={() => setOpenPanel('menu')}>
-          <Menu size={24} strokeWidth={1.5} /><span>MENU</span>
-        </button>
-        <button className="vb-wordmark" aria-label="VoiceBridge 홈" onClick={() => navigate('dashboard')}>VOICE<span>BRIDGE</span><i aria-hidden="true">∿</i></button>
         <button className="vb-header-action vb-header-account" aria-label={user ? '마이페이지 열기' : '로그인하기'}
           aria-haspopup={user ? 'dialog' : undefined} aria-expanded={user ? openPanel === 'account' : undefined}
-          onClick={() => user ? setOpenPanel('account') : navigate('login')}>
-          <span>{user ? 'MY PAGE' : 'LOGIN'}</span><UserRound size={23} strokeWidth={1.5} />
+          onClick={() => {
+            if (user) {
+              setOpenPanel('account');
+            } else {
+              sessionStorage.setItem('redirectTab', currentTab !== 'login' && currentTab !== 'register' ? currentTab : 'dashboard');
+              navigate('login');
+            }
+          }}>
+          <UserRound size={23} strokeWidth={1.5} /><span>{user ? 'MY PAGE' : 'LOGIN'}</span>
+        </button>
+        <button className="vb-wordmark" aria-label="VoiceBridge 홈" onClick={() => navigate('dashboard')}>VOICE<span>BRIDGE</span><i aria-hidden="true">∿</i></button>
+        <button className="vb-header-action vb-header-menu" aria-label="메뉴 열기" aria-expanded={openPanel === 'menu'} aria-haspopup="dialog" onClick={() => setOpenPanel('menu')}>
+          <span>MENU</span><Menu size={24} strokeWidth={1.5} />
         </button>
       </div>
       {openPanel === 'menu' && <BrandDialog label="전체 메뉴와 접근성 설정" className="vb-menu-dialog" onClose={() => setOpenPanel(null)}>
@@ -49,16 +44,20 @@ export const AppHeader = () => {
           <div className="vb-drawer-top"><span className="vb-eyebrow">VOICEBRIDGE / MENU</span>
             <button className="vb-icon-button" aria-label="메뉴 닫기" onClick={() => setOpenPanel(null)}><X size={26} /></button>
           </div>
-          {user && <nav aria-label="주요 메뉴">
+          <nav aria-label="주요 메뉴">
             {navItems.map((item,index) => <button key={item.id} onClick={() => navigate(item.id)}
-              aria-current={currentTab === item.id || (item.id === 'diagnosis' && currentTab === 'practice') ? 'page' : undefined}>
+              aria-current={currentTab === item.id ? 'page' : undefined}>
               <span className="vb-nav-index">0{index + 1}</span><span>{item.label}</span><small>{item.english}</small><ArrowUpRight size={22} />
             </button>)}
-          </nav>}
+          </nav>
           <section className="vb-drawer-access" aria-labelledby="vb-access-title">
             <h2 id="vb-access-title">편안하게 보기</h2><AccessibilityBar />
           </section>
-          {!user && <div className="vb-drawer-account"><button className="vb-text-link" onClick={() => navigate('login')}><LogIn size={20} />로그인하기<ArrowUpRight size={20} /></button></div>}
+          {!user && <div className="vb-drawer-account"><button className="vb-text-link" onClick={() => {
+            setOpenPanel(null);
+            sessionStorage.setItem('redirectTab', currentTab !== 'login' && currentTab !== 'register' ? currentTab : 'dashboard');
+            navigate('login');
+          }}><LogIn size={20} />로그인하기<ArrowUpRight size={20} /></button></div>}
           <p className="vb-drawer-note">Every voice deserves to be heard.</p>
         </div>
       </BrandDialog>}

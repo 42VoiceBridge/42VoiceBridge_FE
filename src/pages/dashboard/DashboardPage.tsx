@@ -22,7 +22,10 @@ export const DashboardPage = () => {
   useEffect(() => {
     const fetchRecent = async () => {
       const token = localStorage.getItem('accessToken');
-      if (!token) return;
+      if (!token) {
+        setRecentRecognitions([]);
+        return;
+      }
       
       try {
         setRecentError(null);
@@ -36,7 +39,7 @@ export const DashboardPage = () => {
       }
     };
     fetchRecent();
-  }, []);
+  }, [user]);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -101,13 +104,12 @@ export const DashboardPage = () => {
 
       <section className="vb-personal vb-container" aria-labelledby="vb-personal-title">
         <Reveal>
-          <p className="vb-eyebrow">04 / MADE FOR YOUR VOICE</p>
+          <p className="vb-eyebrow">04 / QUICK PHRASES &amp; VOICE</p>
           <div className="vb-personal-grid">
-            <div><h2 id="vb-personal-title" className="vb-personal-title">YOUR VOICE,<br /><span>YOUR AI.</span></h2><div className="vb-personal-lines" aria-hidden="true">{Array.from({ length: 7 }, (_,i) => <span key={i} />)}</div></div>
-            <div className="vb-section-copy"><h3>나의 목소리를,<br />조금 더 잘 이해하도록.</h3><p className="vb-muted">저마다 다른 발화의 리듬과 습관.<br />개인화 학습과 발음 관리로<br />나에게 맞는 소통을 준비합니다.</p>
-              <button className="vb-feature-link" onClick={() => setCurrentTab('personalization')}><span><small>PERSONALIZATION</small>나의 AI 학습</span><ArrowUpRight size={26} /></button>
-              <button className="vb-feature-link" onClick={() => setCurrentTab('diagnosis')}><span><small>SPEECH CARE</small>발음 관리 시작하기</span><ArrowUpRight size={26} /></button>
-              <button className="vb-feature-link" onClick={() => setCurrentTab('practice')}><span><small>PRACTICE</small>추천 문장 연습하기</span><ArrowUpRight size={26} /></button>
+            <div><h2 id="vb-personal-title" className="vb-personal-title">READY WORDS,<br /><span>CLEAR VOICE.</span></h2><div className="vb-personal-lines" aria-hidden="true">{Array.from({ length: 7 }, (_,i) => <span key={i} />)}</div></div>
+            <div className="vb-section-copy"><h3>자주 쓰는 말을,<br />버튼 하나로 또렷하게.</h3><p className="vb-muted">인사, 부탁, 일상, 병원 등<br />상황별 문구를 미리 저장해 두고<br />버튼 한 번으로 또렷한 음성으로 전달합니다.</p>
+              <button className="vb-feature-link" onClick={() => setCurrentTab('phrases')}><span><small>QUICK PHRASES</small>자주 쓰는 문구 말하기</span><ArrowUpRight size={26} /></button>
+              <button className="vb-feature-link" onClick={() => setCurrentTab('assist')}><span><small>VOICE ASSIST</small>실시간 음성 대화</span><ArrowUpRight size={26} /></button>
             </div>
           </div>
         </Reveal>
@@ -121,7 +123,7 @@ export const DashboardPage = () => {
         <details><summary><span>{user?.name}님의 최근 대화</span><span className="vb-recent-hint">대화 결과 보기 <ArrowDown size={20} /></span></summary>
           <div className="vb-recent-list">{recentRecognitions.map(msg => <article key={msg.recognitionId}>
             <p className="vb-eyebrow">
-              {new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} · {msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'} {msg.confidence !== null ? `신뢰도 ${Math.round(msg.confidence * 100)}%` : '(신뢰도 제공 안 됨)'}
+              {msg.createdAt && !Number.isNaN(new Date(msg.createdAt).getTime()) && `${new Date(msg.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })} · `}{msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'} {msg.confidence !== null ? `신뢰도 ${Math.round(msg.confidence * 100)}%` : '(신뢰도 제공 안 됨)'}
             </p>
             <p className="vb-recent-text">“{msg.recognizedText}”</p>
             <div className="vb-recent-actions">

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { signupApi } from '../../api/auth';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
+import { BrandDialog } from '../../components/common/BrandDialog';
+import { termsOfServiceText } from '../../content/terms';
+import { privacyPolicyText } from '../../content/privacy';
 
 export const RegisterPage: React.FC = () => {
   const { setCurrentTab } = useApp();
@@ -13,6 +16,27 @@ export const RegisterPage: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [agreeAll, setAgreeAll] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [termsModal, setTermsModal] = useState<'terms' | 'privacy' | null>(null);
+
+  const handleAgreeAllChange = (checked: boolean) => {
+    setAgreeAll(checked);
+    setAgreeTerms(checked);
+    setAgreePrivacy(checked);
+  };
+
+  const handleAgreeTermsChange = (checked: boolean) => {
+    setAgreeTerms(checked);
+    setAgreeAll(checked && agreePrivacy);
+  };
+
+  const handleAgreePrivacyChange = (checked: boolean) => {
+    setAgreePrivacy(checked);
+    setAgreeAll(checked && agreeTerms);
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +50,10 @@ export const RegisterPage: React.FC = () => {
     }
     if (password.length < 8) {
       setErrorMsg('비밀번호는 8자 이상 입력해주세요.');
+      return;
+    }
+    if (!agreeTerms || !agreePrivacy) {
+      setErrorMsg('필수 약관에 모두 동의해주세요.');
       return;
     }
     
@@ -226,6 +254,154 @@ export const RegisterPage: React.FC = () => {
               />
             </div>
 
+            {/* Terms of Service Section */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                padding: '20px 24px',
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+                borderRadius: '8px',
+                border: '1px solid var(--vb-line)',
+              }}
+            >
+              {/* Agree All Checkbox */}
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  paddingBottom: '14px',
+                  borderBottom: '1px solid var(--vb-line)',
+                  userSelect: 'none',
+                }}
+              >
+                <input
+                  type="checkbox"
+                  id="agree-all"
+                  checked={agreeAll}
+                  onChange={(e) => handleAgreeAllChange(e.target.checked)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    accentColor: 'var(--vb-green)',
+                    cursor: 'pointer',
+                  }}
+                />
+                <span style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--vb-ink)' }}>
+                  약관 전체 동의
+                </span>
+              </label>
+
+              {/* Item 1: Service Terms */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    flex: 1,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    id="agree-terms"
+                    checked={agreeTerms}
+                    onChange={(e) => handleAgreeTermsChange(e.target.checked)}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      accentColor: 'var(--vb-green)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--vb-ink)' }}>
+                    <strong style={{ color: 'var(--vb-green)', marginRight: '6px' }}>[필수]</strong>
+                    서비스 이용약관 동의
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setTermsModal('terms')}
+                  className="vb-text-link"
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--vb-muted)',
+                    textDecoration: 'underline',
+                    padding: 0,
+                    minHeight: 'auto',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  자세히 보기
+                </button>
+              </div>
+
+              {/* Item 2: Privacy Policy */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                }}
+              >
+                <label
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    flex: 1,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    id="agree-privacy"
+                    checked={agreePrivacy}
+                    onChange={(e) => handleAgreePrivacyChange(e.target.checked)}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      accentColor: 'var(--vb-green)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--vb-ink)' }}>
+                    <strong style={{ color: 'var(--vb-green)', marginRight: '6px' }}>[필수]</strong>
+                    개인정보 수집·이용 동의
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setTermsModal('privacy')}
+                  className="vb-text-link"
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    color: 'var(--vb-muted)',
+                    textDecoration: 'underline',
+                    padding: 0,
+                    minHeight: 'auto',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  자세히 보기
+                </button>
+              </div>
+            </div>
+
             {errorMsg && (
               <div style={{ marginTop: '-12px' }}>
                 <ErrorMessage message={errorMsg} />
@@ -251,6 +427,41 @@ export const RegisterPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {termsModal && (
+        <BrandDialog
+          label={termsModal === 'terms' ? '서비스 이용약관' : '개인정보처리방침'}
+          className="vb-legal-dialog"
+          onClose={() => setTermsModal(null)}
+        >
+          <div className="vb-legal-panel">
+            <div className="vb-drawer-top">
+              <span className="vb-eyebrow">LEGAL / DOCUMENT</span>
+              <button
+                className="vb-icon-button"
+                type="button"
+                aria-label="안내 닫기"
+                onClick={() => setTermsModal(null)}
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <p className="vb-eyebrow">{termsModal === 'terms' ? 'TERMS OF SERVICE' : 'PRIVACY POLICY'}</p>
+            <h2>{termsModal === 'terms' ? '서비스 이용약관' : '개인정보처리방침'}</h2>
+            <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: 'var(--text-sm)', color: 'var(--vb-ink)' }}>
+              {termsModal === 'terms' ? termsOfServiceText : privacyPolicyText}
+            </div>
+            <button
+              className="vb-button"
+              style={{ marginTop: '28px' }}
+              type="button"
+              onClick={() => setTermsModal(null)}
+            >
+              확인
+            </button>
+          </div>
+        </BrandDialog>
+      )}
     </div>
   );
 };

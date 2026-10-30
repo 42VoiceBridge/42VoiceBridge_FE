@@ -8,7 +8,7 @@ import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const PersonalizationPage: React.FC = () => {
-  const { user } = useApp();
+  const { user, requireAuth } = useApp();
   const [model, setModel] = useState<PersonalizationModelResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,13 +50,20 @@ export const PersonalizationPage: React.FC = () => {
 
   return (
     <div className="vb-theme vb-page vb-page--personalization responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="PERSONALIZATION / YOUR AI" title={<>YOUR VOICE,<br /><span>YOUR AI.</span></>} description={`${user?.name || '사용자'}님의 발화 패턴을 학습해, 사용할수록 목소리를 더 잘 이해합니다.`} />
+      <FeaturePageHeader eyebrow="PERSONALIZATION / YOUR AI" title={<>YOUR VOICE,<br /><span>YOUR AI.</span></>} description={`${user?.name || '사용자'}님의 개인화 모델 상태를 확인할 수 있습니다. 새 음성 수집과 학습 기능은 준비 중입니다.`} />
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           데이터를 불러오는 중입니다...
         </div>
       ) : error ? (
-        <ErrorMessage message={error} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+          <ErrorMessage message={error} />
+          {error.includes('로그인') && (
+            <SeniorButton variant="secondary" onClick={() => requireAuth('personalization')}>
+              로그인하러 가기
+            </SeniorButton>
+          )}
+        </div>
       ) : model && (
         <>
           {/* 2-Column Dashboard Cards */}
@@ -87,7 +94,7 @@ export const PersonalizationPage: React.FC = () => {
                 </div>
 
                 <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '20px' }}>
-                  진단 및 문장 연습 시 녹음된 음성이 개인 맞춤 데이터로 안전하게 축적됩니다.
+                  개인화 학습용 음성 수집 기능은 아직 제공되지 않습니다.
                 </p>
 
                 <div
@@ -99,12 +106,12 @@ export const PersonalizationPage: React.FC = () => {
                   }}
                 >
                   <strong style={{ fontSize: 'var(--text-lg)' }}>
-                    학습에 사용된 녹음: {model.trainingRecordingCount}개
+                    저장된 학습 작업의 녹음 수: {model.trainingRecordingCount ?? 0}개
                   </strong>
                 </div>
 
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  충분한 녹음 데이터가 모이면 전용 모델의 인식 정확도가 최적화됩니다.
+                  이 수치는 학습 작업 기록이며, 현재 화면에서 학습이나 정확도 향상을 확인할 수는 없습니다.
                 </p>
               </div>
 
@@ -158,11 +165,11 @@ export const PersonalizationPage: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                         <Award size={20} color="var(--color-secondary)" />
                         <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'var(--color-text-title)' }}>
-                          전용 모델 (버전: {model.modelVersion})
+                          완료된 학습 작업 기록 (버전: {model.modelVersion})
                         </span>
                       </div>
                       <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
-                        고유한 발성 패턴이 성공적으로 반영되어 있습니다.
+                        실제 모델 적용과 인식 성능은 별도 검증이 필요합니다.
                       </p>
                     </div>
                   </>
@@ -215,7 +222,7 @@ export const PersonalizationPage: React.FC = () => {
             </div>
 
             <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '28px' }}>
-              구음장애 환자의 특수 조음 발음 시, 일반 범용 AI 모델 대비 개인화 모델의 인식 성공률 차이입니다.
+              기본 모델과 개인화 모델의 인식 성능을 비교하는 기능은 준비 중입니다.
             </p>
 
             <div className="responsive-panel"

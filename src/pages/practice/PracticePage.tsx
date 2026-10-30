@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Mic,
-  Square,
   X,
   RefreshCw
 } from 'lucide-react';
@@ -16,18 +15,13 @@ import type { RecommendationSentence } from '../../api/recommendation';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const PracticePage: React.FC = () => {
-  const { setCurrentTab } = useApp();
+  const { requireAuth } = useApp();
   
   const [sentences, setSentences] = useState<RecommendationSentence[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const [activeSentence, setActiveSentence] = useState<RecommendationSentence | null>(null);
-
-  // Practice Modal State
-  const [isRecording, setIsRecording] = useState(false);
-  const [hasRecorded, setHasRecorded] = useState(false);
-  const [practiceError, setPracticeError] = useState<string | null>(null);
 
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -73,16 +67,10 @@ export const PracticePage: React.FC = () => {
 
   const openPracticeModal = (sentence: RecommendationSentence) => {
     setActiveSentence(sentence);
-    setIsRecording(false);
-    setHasRecorded(false);
-    setPracticeError(null);
   };
 
   const closePracticeModal = () => {
     setActiveSentence(null);
-    setIsRecording(false);
-    setHasRecorded(false);
-    setPracticeError(null);
   };
 
   useEffect(() => {
@@ -107,20 +95,9 @@ export const PracticePage: React.FC = () => {
     }
   }, [activeSentence]);
 
-  const handleStartPracticeRecord = () => {
-    setPracticeError(null);
-    setIsRecording(true);
-    setHasRecorded(false);
-  };
-
-  const handleStopPracticeRecord = () => {
-    setIsRecording(false);
-    setPracticeError('현재 녹음 평가 기능을 준비하고 있습니다.');
-  };
-
   return (
     <div className="vb-theme vb-page vb-page--practice responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="PRACTICE / SPEECH CARE" title={<>문장을 천천히,<br /><span>나의 목소리로.</span></>} description="문장을 듣고, 읽고, 반복해서 연습합니다." />
+      <FeaturePageHeader eyebrow="PRACTICE / SPEECH CARE" title={<>문장을 천천히,<br /><span>나의 목소리로.</span></>} description="추천 문장을 듣고 따라 읽어보세요. 녹음 평가와 결과 저장은 준비 중입니다." />
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 800 }}>추천 연습 문장</h2>
@@ -141,7 +118,7 @@ export const PracticePage: React.FC = () => {
           <div>
             <SeniorButton variant="primary" onClick={loadRecommendations}>다시 시도</SeniorButton>
             {error.includes('로그인') && (
-              <SeniorButton variant="secondary" onClick={() => setCurrentTab('login')} style={{ marginLeft: '12px' }}>로그인하러 가기</SeniorButton>
+              <SeniorButton variant="secondary" onClick={() => requireAuth('practice')} style={{ marginLeft: '12px' }}>로그인하러 가기</SeniorButton>
             )}
           </div>
         </div>
@@ -236,7 +213,7 @@ export const PracticePage: React.FC = () => {
             </button>
 
             <p id="practice-dialog-title" style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginBottom: '16px', marginTop: '16px' }}>
-              문장을 또박또박 발음해보세요.
+              문장을 듣고 따라 읽어보세요. 녹음 평가와 결과 저장은 아직 제공되지 않습니다.
             </p>
 
             {/* Modal Big Sentence */}
@@ -261,38 +238,19 @@ export const PracticePage: React.FC = () => {
 
             {/* Audio Visualizer */}
             <div style={{ marginBottom: '24px' }}>
-              <AudioVisualizer isRecording={isRecording} height={70} />
+              <AudioVisualizer isRecording={false} height={70} />
             </div>
-
-            {practiceError && (
-              <div style={{ marginBottom: '24px' }}>
-                <ErrorMessage message={practiceError} />
-              </div>
-            )}
-
-
 
             {/* Controls */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              {!isRecording ? (
                 <SeniorButton
                   variant="secondary"
                   size="large"
                   icon={<Mic size={26} />}
-                  onClick={handleStartPracticeRecord}
+                  disabled={true}
                 >
-                  {hasRecorded ? '다시 녹음하기' : '녹음 시작'}
+                  녹음 평가 준비 중
                 </SeniorButton>
-              ) : (
-                <SeniorButton
-                  variant="danger"
-                  size="large"
-                  icon={<Square size={24} />}
-                  onClick={handleStopPracticeRecord}
-                >
-                  녹음 완료 및 평가
-                </SeniorButton>
-              )}
 
               <SeniorButton variant="outline" size="large" onClick={closePracticeModal}>
                 연습 마치기
