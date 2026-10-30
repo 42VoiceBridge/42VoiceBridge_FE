@@ -98,13 +98,19 @@ export const createRecognitionApi = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    if (errorData?.error?.message) {
-      const err: any = new Error(errorData.error.message);
-      err.code = errorData.error.code || response.status.toString();
-      throw err;
+    let errMsg = errorData?.error?.message;
+    if (!errMsg) {
+      if (response.status === 503 || errorData?.error?.code === 'STT_UNAVAILABLE') {
+        errMsg = '음성 인식 서비스를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해주세요.';
+      } else if (response.status === 429 || errorData?.error?.code === 'TOO_MANY_REQUESTS') {
+        errMsg = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+        errMsg = '음성 인식 처리 중 오류가 발생했습니다.';
+      }
     }
-    const err: any = new Error('음성 인식 처리 중 오류가 발생했습니다.');
-    err.code = response.status.toString();
+    const err: any = new Error(errMsg);
+    err.code = errorData?.error?.code || response.status.toString();
+    err.status = response.status;
     throw err;
   }
 

@@ -68,10 +68,14 @@ export class PhraseApiError extends Error {
 }
 
 /**
- * 자주 쓰는 문구 목록 조회 (GET /api/v1/phrases)
+ * 자주 쓰는 문구 목록 조회 (GET /api/v1/phrases?category=)
  */
-export const getPhrasesApi = async (accessToken: string): Promise<PhraseListResponse> => {
-  const response = await authFetch(`${API_BASE_URL}/api/v1/phrases`, {
+export const getPhrasesApi = async (
+  accessToken: string,
+  category?: string
+): Promise<PhraseListResponse> => {
+  const query = category ? `?category=${encodeURIComponent(category)}` : '';
+  const response = await authFetch(`${API_BASE_URL}/api/v1/phrases${query}`, {
     method: 'GET',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -105,7 +109,23 @@ export const addPhraseApi = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    const message = errorData?.error?.message || '문구 추가 중 오류가 발생했습니다.';
+    let message = errorData?.error?.message;
+    if (!message) {
+      const code = errorData?.error?.code;
+      if (response.status === 409 || code === 'DUPLICATE_PHRASE' || code === 'PHRASE_DUPLICATED' || code === 'PHRASE_LIMIT_EXCEEDED') {
+        if (code === 'DUPLICATE_PHRASE' || code === 'PHRASE_DUPLICATED') {
+          message = '이미 등록된 문구입니다.';
+        } else if (code === 'PHRASE_LIMIT_EXCEEDED') {
+          message = '문구는 최대 100개까지 등록할 수 있습니다.';
+        } else {
+          message = '이미 등록된 문구이거나 최대 문구 개수(100개)를 초과했습니다.';
+        }
+      } else if (response.status === 429 || code === 'TOO_MANY_REQUESTS') {
+        message = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+        message = '문구 추가 중 오류가 발생했습니다.';
+      }
+    }
     throw new PhraseApiError(message, response.status, errorData?.error?.code);
   }
 
@@ -138,7 +158,7 @@ export const deletePhraseApi = async (
 
 /**
  * 문구 말하기 (POST /api/v1/phrases/{phraseId}/speak)
- * 동기 API - 즉시 audioUrl 반환 (폴링 없음)
+ * 동기 API - 즉시 audioUrl 반환 (임시 주소이므로 저장/재사용하지 않고 매번 호출)
  */
 export const speakPhraseApi = async (
   accessToken: string,
@@ -154,10 +174,14 @@ export const speakPhraseApi = async (
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     let message = errorData?.error?.message;
-    if (response.status === 503 || errorData?.error?.code === 'TTS_UNAVAILABLE') {
-      message = '잠시 후 다시 눌러 주세요.';
-    } else if (!message) {
-      message = '음성 생성 요청에 실패했습니다.';
+    if (!message) {
+      if (response.status === 503 || errorData?.error?.code === 'TTS_UNAVAILABLE') {
+        message = '잠시 후 다시 눌러 주세요.';
+      } else if (response.status === 429 || errorData?.error?.code === 'TOO_MANY_REQUESTS') {
+        message = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+      } else {
+        message = '음성 생성 요청에 실패했습니다.';
+      }
     }
     throw new PhraseApiError(message, response.status, errorData?.error?.code);
   }

@@ -8,8 +8,11 @@ import {
   Info,
   Loader2,
   X,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
+import { isPhraseSuggestionEnabled } from '../../utils/featureFlags';
+import { PhraseSuggestionModal } from './PhraseSuggestionModal';
 import { useApp } from '../../context/AppContext';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { BrandDialog } from '../../components/common/BrandDialog';
@@ -40,6 +43,7 @@ export const PhrasesPage: React.FC = () => {
 
   // 문구 추가 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
   const [newCategoryCode, setNewCategoryCode] = useState<string>('');
   const [newText, setNewText] = useState<string>('');
   const [addError, setAddError] = useState<string | null>(null);
@@ -120,11 +124,7 @@ export const PhrasesPage: React.FC = () => {
     } catch (err: unknown) {
       console.error('Speak error:', err);
       if (err instanceof PhraseApiError) {
-        if (err.status === 503 || err.code === 'TTS_UNAVAILABLE') {
-          setSpeakError('잠시 후 다시 눌러 주세요.');
-        } else {
-          setSpeakError(err.message || '음성을 재생하지 못했습니다. 다시 시도해주세요.');
-        }
+        setSpeakError(err.message || '음성을 재생하지 못했습니다. 다시 시도해주세요.');
       } else if (err instanceof Error) {
         setSpeakError(err.message || '음성을 재생하지 못했습니다. 다시 시도해주세요.');
       } else {
@@ -183,6 +183,14 @@ export const PhrasesPage: React.FC = () => {
     setNewText('');
     setAddError(null);
     setIsAddModalOpen(true);
+  };
+
+  // AI 문장 추천 모달 열기
+  const openSuggestionModal = () => {
+    if (!requireAuth('phrases')) {
+      return;
+    }
+    setIsSuggestionModalOpen(true);
   };
 
   // 문구 추가 제출 핸들러
@@ -281,7 +289,7 @@ export const PhrasesPage: React.FC = () => {
           <strong style={{ color: 'var(--color-text)', display: 'block', marginBottom: '2px' }}>
             말하기 기능 이용 안내
           </strong>
-          말하기 버튼을 누르면 문구 텍스트가 음성 합성을 위해 <strong>네이버 클라우드 CLOVA Voice로 전송</strong>됩니다.
+          말하기 버튼을 누르면 문구 텍스트가 음성 합성을 위해 <strong>네이버 클라우드 CLOVA Voice 등 외부 서비스로 안전하게 전송</strong>됩니다.
           안전을 위해 직접 추가하는 문구에는 이름, 연락처, 주소와 같은 민감한 개인정보를 넣지 마세요.
         </div>
       </section>
@@ -289,7 +297,15 @@ export const PhrasesPage: React.FC = () => {
       {/* 오류 메시지 영역 */}
       {(pageError || speakError) && (
         <div style={{ marginBottom: '20px' }}>
-          <ErrorMessage message={speakError || pageError!} />
+          <ErrorMessage
+            message={speakError || pageError!}
+            autoDismiss={true}
+            duration={4000}
+            onDismiss={() => {
+              setSpeakError(null);
+              setPageError(null);
+            }}
+          />
         </div>
       )}
 
@@ -354,14 +370,27 @@ export const PhrasesPage: React.FC = () => {
           })}
         </nav>
 
-        <SeniorButton
-          variant="primary"
-          size="normal"
-          icon={<Plus size={20} />}
-          onClick={openAddModal}
-        >
-          새 문구 추가
-        </SeniorButton>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {isPhraseSuggestionEnabled() && (
+            <SeniorButton
+              variant="outline"
+              size="normal"
+              icon={<Sparkles size={18} color="var(--color-primary)" />}
+              onClick={openSuggestionModal}
+              style={{ fontWeight: 600 }}
+            >
+              AI 문장 추천
+            </SeniorButton>
+          )}
+          <SeniorButton
+            variant="primary"
+            size="normal"
+            icon={<Plus size={20} />}
+            onClick={openAddModal}
+          >
+            새 문구 추가
+          </SeniorButton>
+        </div>
       </div>
 
       {/* 로딩 상태 */}
@@ -628,15 +657,21 @@ export const PhrasesPage: React.FC = () => {
               >
                 <li><strong>100자 이하</strong>로 입력해 주세요.</li>
                 <li><strong>줄바꿈(Enter) 불가</strong> (한 줄로 작성).</li>
-                <li>직접 추가한 문구는 사용자당 <strong>최대 50개</strong>까지 저장 가능합니다.</li>
+                <li>직접 추가한 문구는 사용자당 <strong>최대 100개</strong>까지 저장 가능합니다.</li>
                 <li><strong style={{ color: 'var(--color-danger, #d32f2f)' }}>이름·연락처·주소 등 개인정보는 넣지 마세요.</strong></li>
+                <li>음성 합성 등 서비스 제공을 위해 문구 텍스트가 네이버 클라우드 등 외부 서비스로 안전하게 전송될 수 있습니다.</li>
               </ul>
             </div>
 
             {/* 9. 문구 추가 실패 시 서버 error.message 표시 */}
             {addError && (
               <div style={{ marginBottom: '18px' }}>
-                <ErrorMessage message={addError} />
+                <ErrorMessage
+                  message={addError}
+                  autoDismiss={true}
+                  duration={4000}
+                  onDismiss={() => setAddError(null)}
+                />
               </div>
             )}
 
@@ -751,6 +786,20 @@ export const PhrasesPage: React.FC = () => {
             </form>
           </div>
         </BrandDialog>
+      )}
+
+      {/* AI 문장 추천 모달 */}
+      {isPhraseSuggestionEnabled() && (
+        <PhraseSuggestionModal
+          isOpen={isSuggestionModalOpen}
+          onClose={() => setIsSuggestionModalOpen(false)}
+          onPhraseAdded={loadPhrases}
+          defaultCategoryCode={selectedCategoryCode || 'DAILY'}
+          categoryOptions={categories.map((c) => ({
+            category: c.category,
+            label: c.label,
+          }))}
+        />
       )}
     </div>
   );

@@ -13,6 +13,9 @@ import { LoginPromptDialog } from './components/common/LoginPromptDialog';
 import { SplashScreen } from './components/common/SplashScreen';
 import { OnboardingModal } from './components/common/OnboardingModal';
 
+import { ConversationPage } from './pages/conversation/ConversationPage';
+import { isConversationModeEnabled } from './utils/featureFlags';
+
 const AppContent: React.FC = () => {
   const {
     currentTab,
@@ -51,6 +54,8 @@ const AppContent: React.FC = () => {
         return <VoiceAssistPage />;
       case 'phrases':
         return <PhrasesPage />;
+      case 'conversation':
+        return isConversationModeEnabled() ? <ConversationPage /> : <DashboardPage />;
       case 'history':
         return <HistoryPage />;
       case 'settings':

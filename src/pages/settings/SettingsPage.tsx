@@ -1,10 +1,16 @@
-import React from 'react';
-import { Volume2, Monitor, User, Shield, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Volume2, Monitor, User, Shield, LogOut, Sparkles } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
+import {
+  isPhraseSuggestionEnabled,
+  isConversationModeEnabled,
+  setDevFeatureFlag,
+} from '../../utils/featureFlags';
 
 export const SettingsPage: React.FC = () => {
+  const [, setDevUpdateTick] = useState(0);
   const { 
     user, 
     fontSize, 
@@ -166,6 +172,62 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* 5. 개발 환경 전용 AI 기능 미리보기 제어판 (DEV 모드에서만 표시) */}
+        {import.meta.env.DEV && (
+          <section className="responsive-panel vb-settings-section" style={{
+            backgroundColor: 'var(--color-bg-surface)',
+            padding: '24px 32px',
+            borderRadius: 'var(--border-radius-lg)',
+            border: '2px dashed var(--color-primary)',
+            boxShadow: 'var(--shadow-sm)',
+          }}>
+            <h2 style={{ fontSize: 'var(--text-xl)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Sparkles size={24} color="var(--color-primary)" />
+              <span>개발자 도구 (AI 기능 테스트)</span>
+            </h2>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '18px' }}>
+              신규 AI 기능의 UI 및 연동 흐름을 테스트하기 위한 개발 환경 전용 제어판입니다. (운영 빌드에서는 자동 제외됩니다)
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '14px', borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}>
+                <div>
+                  <strong style={{ fontSize: 'var(--text-base)', display: 'block' }}>1. AI 문장 추천 기능 (자주 쓰는 문구)</strong>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>자주 쓰는 문구 화면에서 [AI 문장 추천] 버튼 및 추천 모달을 활성화합니다.</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isPhraseSuggestionEnabled()}
+                  onChange={(e) => {
+                    setDevFeatureFlag('suggestion', e.target.checked);
+                    setDevUpdateTick((t) => t + 1);
+                  }}
+                  style={{ width: '22px', height: '22px', cursor: 'pointer' }}
+                />
+              </label>
+
+              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '14px', borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}>
+                <div>
+                  <strong style={{ fontSize: 'var(--text-base)', display: 'block' }}>2. AI 대화 모드 기능</strong>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>메뉴 및 화면에 [AI 대화 모드] (상대방 음성 녹음·AI 추천 답변)를 활성화합니다.</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isConversationModeEnabled()}
+                  onChange={(e) => {
+                    setDevFeatureFlag('conversation', e.target.checked);
+                    setDevUpdateTick((t) => t + 1);
+                  }}
+                  style={{ width: '22px', height: '22px', cursor: 'pointer' }}
+                />
+              </label>
+
+              <div style={{ fontSize: 'var(--text-xs)', color: '#4B5563', backgroundColor: '#F3F4F6', padding: '12px 16px', borderRadius: '8px', lineHeight: 1.5 }}>
+                💡 <strong>URL 파라미터 안내:</strong> 주소창에 <code>?ai=true</code>를 입력해 접속하면 두 기능이 즉시 활성화됩니다.
+              </div>
+            </div>
+          </section>
+        )}
 
       </div>
     </div>
