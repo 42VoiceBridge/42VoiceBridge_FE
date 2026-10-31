@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Volume2, MessageSquare, ArrowRight, ArrowLeft, Check, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Mic, MessageSquare, Sparkles, ArrowRight, ArrowLeft, Check, X } from 'lucide-react';
 import { SeniorButton } from './SeniorButton';
 
 interface OnboardingModalProps {
@@ -19,27 +19,27 @@ interface StepData {
 const STEPS: StepData[] = [
   {
     step: 1,
-    title: '말하면 글자로 바뀌어요',
-    badge: '음성 인식',
-    description: '마이크 버튼을 누르고 편안하게 말씀해 보세요.',
-    subDescription: '발음이 서툴러도 괜찮아요. AI가 말을 끝까지 듣고 또렷한 글자로 적어 드립니다.',
+    title: '말하면 듣고 대신 읽어줘요',
+    badge: '실시간 말하기',
+    description: '마이크로 편하게 말하면 AI가 또렷한 글자와 목소리로 전합니다.',
+    subDescription: '발음이 서툴러도 괜찮아요. 끝까지 귀 기울여 듣고 깨끗한 음성으로 전달해 드립니다.',
     icon: <Mic size={44} strokeWidth={1.5} color="var(--vb-green, #28523e)" />,
   },
   {
     step: 2,
-    title: '글자를 대신 읽어줘요',
-    badge: '음성 출력',
-    description: '적힌 글자가 맞는지 확인하고 원하는 대로 고칠 수 있어요.',
-    subDescription: '[소리로 읽어주기] 버튼을 누르면 상대방에게 깨끗한 목소리로 전해집니다.',
-    icon: <Volume2 size={44} strokeWidth={1.5} color="var(--vb-green, #28523e)" />,
+    title: '자주 하는 말을 바로 전달해요',
+    badge: '자주 쓰는 문구',
+    description: '인사, 일상, 병원 등 자주 쓰는 문구를 미리 담아 두세요.',
+    subDescription: '버튼 한 번만 누르면 매번 말할 필요 없이 언제든 바로 소리로 들려줍니다.',
+    icon: <MessageSquare size={44} strokeWidth={1.5} color="var(--vb-green, #28523e)" />,
   },
   {
     step: 3,
-    title: '자주 쓰는 문구를 바로 말해요',
-    badge: '자주 쓰는 문구',
-    description: '인사, 일상, 병원 등 자주 하는 말을 미리 담아 두세요.',
-    subDescription: '버튼 하나만 누르면 매번 말할 필요 없이 언제든 바로 소리로 전달됩니다.',
-    icon: <MessageSquare size={44} strokeWidth={1.5} color="var(--vb-green, #28523e)" />,
+    title: 'AI 대화로 자연스럽게 소통하기',
+    badge: 'AI 대화',
+    description: '상대방의 말을 녹음하면 AI가 내용을 글로 보여주고 알맞은 답변을 추천합니다. 추천 문장을 선택하거나 직접 말해서 음성으로 전달할 수 있습니다.',
+    subDescription: '1. 상대방 말 듣기 버튼을 눌러 녹음합니다. → 2. 인식된 내용을 확인합니다. → 3. AI 추천 답변을 선택하거나 직접 말합니다. (※ 상대방 음성 녹음 시 미리 동의를 구해야 합니다.)',
+    icon: <Sparkles size={44} strokeWidth={1.5} color="var(--vb-green, #28523e)" />,
   },
 ];
 
@@ -47,6 +47,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  const handleCompleteOrSkip = useCallback(() => {
+    localStorage.setItem('vb_onboarding_completed', 'true');
+    onClose();
+  }, [onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -93,7 +98,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         }
       };
     }
-  }, [isOpen]);
+  }, [isOpen, handleCompleteOrSkip]);
 
   if (!isOpen) return null;
 
@@ -112,11 +117,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
     if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
     }
-  };
-
-  const handleCompleteOrSkip = () => {
-    localStorage.setItem('vb_onboarding_completed', 'true');
-    onClose();
   };
 
   return (
@@ -141,10 +141,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
         ref={modalRef}
         className="vb-onboarding-card"
         style={{
-          backgroundColor: 'var(--color-bg-surface, #FFFFFF)',
+          backgroundColor: '#FFFFFF',
           borderRadius: 'var(--border-radius-lg, 16px)',
-          border: '2px solid var(--color-border, #E0E0E0)',
-          boxShadow: '0 20px 48px rgba(0, 0, 0, 0.22)',
+          border: '1px solid var(--vb-line, #CBD2C8)',
+          boxShadow: '0 20px 48px rgba(12, 24, 17, 0.22)',
           maxWidth: '520px',
           width: '100%',
           padding: '32px 28px 24px',
@@ -200,7 +200,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({ isOpen, onClos
             gap: '8px',
             marginBottom: '28px',
           }}
-          aria-label={`총 3단계 중 ${currentStep.step}단계`}
+          aria-label={`총 ${STEPS.length}단계 중 ${currentStep.step}단계`}
         >
           {STEPS.map((s, idx) => (
             <div

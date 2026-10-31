@@ -3,9 +3,9 @@ import { ArrowLeft, ArrowRight, Pause, Play } from 'lucide-react';
 import { VoiceGraphic } from './VoiceGraphic';
 
 const slides = [
-  { word: 'SPEAK', title: '하고 싶은 말을, 편하게.', description: '당신의 속도에 맞춰 목소리를 듣습니다.' },
-  { word: 'UNDERSTAND', title: '말 속에 담긴 뜻을 이해합니다.', description: 'AI가 발화를 이해하고 전달할 문장을 찾습니다.' },
-  { word: 'DELIVER', title: '당신의 말이, 더 또렷하게.', description: '확인한 문장을 글자와 음성으로 전달합니다.' },
+  { word: 'SPEAK', title: '하고 싶은 말을, 편하게', description: '당신의 속도에 맞춰 목소리를 듣습니다.' },
+  { word: 'UNDERSTAND', title: '말 속에 담긴 뜻을 이해합니다', description: 'AI가 말한 내용을 이해하고 전달할 문장을 찾습니다.' },
+  { word: 'DELIVER', title: '당신의 말이, 더 또렷하게', description: '확인한 문장을 글자와 음성으로 전달합니다.' },
 ];
 
 export const HeroSlider = () => {

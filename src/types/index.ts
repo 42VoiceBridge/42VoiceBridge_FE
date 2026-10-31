@@ -6,6 +6,8 @@ export interface User {
   email: string;
   avatarUrl?: string;
   createdAt: string;
+  loginProvider?: 'kakao' | 'email';
+  provider?: 'LOCAL' | 'KAKAO';
 }
 
 export type DiagnosisStatus = 'ready' | 'recording' | 'analyzing' | 'completed';

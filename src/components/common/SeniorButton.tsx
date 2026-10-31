@@ -102,12 +102,15 @@ export const SeniorButton = React.forwardRef<HTMLButtonElement, SeniorButtonProp
         fontWeight: 700,
         borderRadius: '8px',
         width: fullWidth ? '100%' : 'auto',
-        opacity: disabled ? 0.6 : 1,
+        opacity: disabled ? 0.45 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
+        filter: disabled ? 'grayscale(45%)' : 'none',
+        boxShadow: disabled ? 'none' : undefined,
         transition: 'all var(--transition-fast)',
         userSelect: 'none',
         ...getVariantStyles(),
         ...getSizeStyles(),
+        ...(disabled ? { boxShadow: 'none' } : {}),
         ...style,
       }}
       disabled={disabled}

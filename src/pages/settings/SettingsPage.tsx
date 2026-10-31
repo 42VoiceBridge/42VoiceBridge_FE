@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Volume2, Monitor, User, Shield, LogOut, Sparkles } from 'lucide-react';
+import { Volume2, Monitor, Shield, Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { deleteVoiceDataApi, AuthApiError } from '../../api/auth';
+import { BrandDialog } from '../../components/common/BrandDialog';
+import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import {
@@ -12,7 +15,6 @@ import {
 export const SettingsPage: React.FC = () => {
   const [, setDevUpdateTick] = useState(0);
   const { 
-    user, 
     fontSize, 
     setFontSize, 
     highContrast, 
@@ -21,13 +23,58 @@ export const SettingsPage: React.FC = () => {
     setAutoTtsPlayback,
     speechRate,
     setSpeechRate,
-    logout,
-    requireAuth 
+    requireAuth,
+    notifyVoiceDataCleared,
   } = useApp();
+
+  const [showVoiceResetModal, setShowVoiceResetModal] = useState(false);
+  const [isDeletingVoiceData, setIsDeletingVoiceData] = useState(false);
+  const [voiceResetError, setVoiceResetError] = useState<string | null>(null);
+  const [voiceResetSuccess, setVoiceResetSuccess] = useState<string | null>(null);
+
+  const handleOpenVoiceResetModal = () => {
+    setVoiceResetError(null);
+    setVoiceResetSuccess(null);
+    if (!requireAuth('settings')) {
+      return;
+    }
+    setShowVoiceResetModal(true);
+  };
+
+  const handleCloseVoiceResetModal = () => {
+    if (isDeletingVoiceData) return;
+    setShowVoiceResetModal(false);
+    setVoiceResetError(null);
+  };
+
+  const handleConfirmDeleteVoiceData = async () => {
+    if (isDeletingVoiceData) return;
+
+    setIsDeletingVoiceData(true);
+    setVoiceResetError(null);
+    setVoiceResetSuccess(null);
+
+    try {
+      await deleteVoiceDataApi();
+      notifyVoiceDataCleared();
+      setShowVoiceResetModal(false);
+      setVoiceResetSuccess('음성 데이터가 삭제되었습니다.');
+    } catch (err: unknown) {
+      if (err instanceof AuthApiError) {
+        setVoiceResetError(err.message);
+      } else if (err instanceof Error) {
+        setVoiceResetError(err.message || '음성 데이터 초기화 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      } else {
+        setVoiceResetError('음성 데이터 초기화 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+      }
+    } finally {
+      setIsDeletingVoiceData(false);
+    }
+  };
 
   return (
     <div className="vb-theme vb-page vb-page--settings responsive-page settings-page" style={{ maxWidth: '800px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="SETTINGS / PREFERENCES" title={<>나에게 맞게,<br /><span>VoiceBridge를 조정하세요.</span></>} description="음성, 화면, 계정과 데이터 설정을 한곳에서 관리합니다." />
+      <FeaturePageHeader eyebrow="SETTINGS / PREFERENCES" title={<>나에게 맞게,<br /><span>VoiceBridge를 조정하세요</span></>} description="음성, 화면, 개인정보와 데이터 설정을 한곳에서 관리합니다." />
       <div className="vb-settings-list" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {/* 1. 음성 설정 */}
@@ -117,7 +164,7 @@ export const SettingsPage: React.FC = () => {
           </div>
         </section>
 
-        {/* 3. 계정 설정 */}
+        {/* 3. 음성 데이터 관리 */}
         <section className="responsive-panel vb-settings-section" style={{
           backgroundColor: 'var(--color-bg-surface)',
           padding: '24px 32px',
@@ -125,50 +172,82 @@ export const SettingsPage: React.FC = () => {
           border: '1px solid var(--color-border)',
           boxShadow: 'var(--shadow-sm)',
         }}>
-          <h2 style={{ fontSize: 'var(--text-xl)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-            <User size={24} color="var(--color-primary)" />
-            <span>계정 관리</span>
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--color-border)' }}>
-              <strong style={{ fontSize: 'var(--text-lg)', display: 'block' }}>프로필 정보</strong>
-              <div style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', marginTop: '4px' }}>
-                이름: {user?.name || '정보 없음'} <br/>
-                이메일: {user?.email || '정보 없음'}
-              </div>
-            </div>
-            <div className="settings-options" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              {user ? (
-                <>
-                  <SeniorButton variant="outline" size="normal" icon={<LogOut size={20} />} onClick={logout}>로그아웃</SeniorButton>
-                  <SeniorButton variant="ghost" size="normal" disabled={true} style={{ color: 'var(--color-text-muted)' }}>회원 탈퇴 (기능 준비 중)</SeniorButton>
-                </>
-              ) : (
-                <SeniorButton variant="primary" size="normal" icon={<User size={20} />} onClick={() => requireAuth('settings')}>로그인하기</SeniorButton>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* 4. 개인정보/데이터 */}
-        <section className="responsive-panel vb-settings-section" style={{
-          backgroundColor: 'var(--color-bg-surface)',
-          padding: '24px 32px',
-          borderRadius: 'var(--border-radius-lg)',
-          border: '1px solid var(--color-border)',
-          boxShadow: 'var(--shadow-sm)',
-        }}>
-          <h2 style={{ fontSize: 'var(--text-xl)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: 'var(--text-xl)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <Shield size={24} color="var(--color-primary)" />
-            <span>개인정보 및 음성 데이터</span>
+            <span>음성 데이터 관리</span>
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <strong style={{ fontSize: 'var(--text-lg)', display: 'block' }}>음성 데이터 초기화</strong>
-              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '12px' }}>
-                서버에 저장된 모든 음성 학습 데이터를 삭제합니다. 이 작업은 되돌릴 수 없습니다.
-              </p>
-              <SeniorButton variant="secondary" size="normal" disabled={true}>음성 데이터 삭제 (기능 준비 중)</SeniorButton>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ fontSize: 'var(--text-base)', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.6 }}>
+              저장된 음성인식 기록과 관련 음성 파일을 삭제할 수 있습니다.
+            </p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5 }}>
+              계정과 직접 추가한 자주 쓰는 문구, 접근성 설정은 유지됩니다. (AI 대화 모드의 임시 대화 데이터는 최대 10분 후 자동 만료됩니다.)
+            </p>
+
+            {voiceResetSuccess && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: '#eef4ed',
+                  border: '1px solid #d3e2d1',
+                  color: '#1a3c2c',
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 600,
+                }}
+              >
+                <CheckCircle2 size={20} color="#28523e" style={{ flexShrink: 0 }} />
+                <span>{voiceResetSuccess}</span>
+              </div>
+            )}
+
+            {!showVoiceResetModal && voiceResetError && (
+              <ErrorMessage
+                message={voiceResetError}
+                onDismiss={() => setVoiceResetError(null)}
+              />
+            )}
+
+            <div style={{ paddingTop: '4px' }}>
+              <button
+                type="button"
+                onClick={handleOpenVoiceResetModal}
+                disabled={isDeletingVoiceData}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px 20px',
+                  fontSize: 'var(--text-base)',
+                  fontWeight: 600,
+                  color: '#991b1b',
+                  backgroundColor: '#fcf8f7',
+                  border: '1.5px solid #e2c5c2',
+                  borderRadius: '8px',
+                  cursor: isDeletingVoiceData ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isDeletingVoiceData) {
+                    e.currentTarget.style.backgroundColor = '#f9ecea';
+                    e.currentTarget.style.borderColor = '#d4a39e';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isDeletingVoiceData) {
+                    e.currentTarget.style.backgroundColor = '#fcf8f7';
+                    e.currentTarget.style.borderColor = '#e2c5c2';
+                  }
+                }}
+              >
+                <span>음성 데이터 초기화</span>
+              </button>
             </div>
           </div>
         </section>
@@ -208,8 +287,8 @@ export const SettingsPage: React.FC = () => {
 
               <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '14px', borderBottom: '1px solid var(--color-border)', cursor: 'pointer' }}>
                 <div>
-                  <strong style={{ fontSize: 'var(--text-base)', display: 'block' }}>2. AI 대화 모드 기능</strong>
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>메뉴 및 화면에 [AI 대화 모드] (상대방 음성 녹음·AI 추천 답변)를 활성화합니다.</span>
+                  <strong style={{ fontSize: 'var(--text-base)', display: 'block' }}>2. AI 대화 기능</strong>
+                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>메뉴 및 화면에 [AI 대화] (상대방 음성 녹음·AI 추천 답변)를 활성화합니다.</span>
                 </div>
                 <input
                   type="checkbox"
@@ -230,6 +309,107 @@ export const SettingsPage: React.FC = () => {
         )}
 
       </div>
+
+      {/* 음성 데이터 초기화 확인 모달 */}
+      {showVoiceResetModal && (
+        <BrandDialog
+          label="음성 데이터 삭제 확인"
+          className="vb-dialog-add-phrase"
+          onClose={handleCloseVoiceResetModal}
+        >
+          <div
+            className="vb-modal-panel"
+            style={{
+              width: 'min(580px, calc(100vw - 32px))',
+              maxWidth: '580px',
+              padding: 'clamp(24px, 4vw, 32px) clamp(20px, 4vw, 28px)',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.15)',
+              margin: 'auto',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: '#fee2e2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#b91c1c',
+                  flexShrink: 0,
+                }}
+              >
+                <AlertTriangle size={24} />
+              </div>
+              <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, margin: 0, color: '#1a2721' }}>
+                저장된 음성 데이터를 삭제할까요?
+              </h3>
+            </div>
+
+            <p
+              style={{
+                fontSize: 'var(--text-base)',
+                color: '#374151',
+                lineHeight: 1.6,
+                marginBottom: '12px',
+                wordBreak: 'keep-all',
+              }}
+            >
+              음성인식 기록, 확인한 문장, 생성된 음성 파일이 삭제됩니다.
+            </p>
+
+            <div
+              style={{
+                backgroundColor: '#f8faf8',
+                border: '1px solid var(--vb-line, #e2e8e0)',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                fontSize: 'var(--text-sm)',
+                color: '#4b5563',
+                lineHeight: 1.55,
+                marginBottom: voiceResetError ? '16px' : '24px',
+              }}
+            >
+              계정과 직접 추가한 자주 쓰는 문구는 삭제되지 않습니다.
+            </div>
+
+            {voiceResetError && (
+              <div style={{ marginBottom: '20px' }}>
+                <ErrorMessage
+                  message={voiceResetError}
+                  onDismiss={() => setVoiceResetError(null)}
+                />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <SeniorButton
+                type="button"
+                variant="outline"
+                size="normal"
+                disabled={isDeletingVoiceData}
+                onClick={handleCloseVoiceResetModal}
+              >
+                취소
+              </SeniorButton>
+              <SeniorButton
+                type="button"
+                variant="danger"
+                size="normal"
+                disabled={isDeletingVoiceData}
+                onClick={handleConfirmDeleteVoiceData}
+              >
+                {isDeletingVoiceData ? '삭제 중...' : '음성 데이터 삭제'}
+              </SeniorButton>
+            </div>
+          </div>
+        </BrandDialog>
+      )}
     </div>
   );
 };

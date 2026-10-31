@@ -7,14 +7,13 @@ import {
   Check,
   Maximize2,
   X,
-  Info,
   Sparkles,
 } from 'lucide-react';
 import { isConversationModeEnabled } from '../../utils/featureFlags';
 import { SeniorButton } from '../../components/common/SeniorButton';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { AudioVisualizer } from '../../components/common/AudioVisualizer';
-import { speakText, AudioRecorderService, playAudioFromUrl } from '../../utils/audioUtils';
+import { speakText, AudioRecorderService, playAudioFromUrl, stopAudioPlayback } from '../../utils/audioUtils';
 
 import { createRecognitionApi, getRecognitionsApi, confirmRecognitionApi } from '../../api/recognition';
 import type { RecognitionResponse } from '../../api/recognition';
@@ -23,7 +22,7 @@ import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { useApp } from '../../context/AppContext';
 
 export const VoiceAssistPage: React.FC = () => {
-  const { requireAuth, setCurrentTab } = useApp();
+  const { requireAuth, setCurrentTab, voiceDataVersion } = useApp();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -72,7 +71,13 @@ export const VoiceAssistPage: React.FC = () => {
 
   const fetchRecent = async () => {
     const token = localStorage.getItem('accessToken');
-    if (!token) return;
+    if (!token) {
+      setRecentRecognitions([]);
+      setConfirmedRecognitions({});
+      setActiveRecognitionId(null);
+      setEditableText('');
+      return;
+    }
     try {
       const res = await getRecognitionsApi(token, 0, 10);
       if (res.success && res.data) {
@@ -85,14 +90,19 @@ export const VoiceAssistPage: React.FC = () => {
   };
 
   useEffect(() => {
+    setRecentRecognitions([]);
+    setConfirmedRecognitions({});
+    setActiveRecognitionId(null);
+    setEditableText('');
     fetchRecent();
     return () => {
       ttsGenerationRef.current++;
+      stopAudioPlayback();
       if (recorderRef.current) {
         recorderRef.current.stopRecording().catch(() => {});
       }
     };
-  }, []);
+  }, [voiceDataVersion]);
 
   const handleStartAssistRecord = async () => {
     setRecordingError(null);
@@ -302,27 +312,7 @@ export const VoiceAssistPage: React.FC = () => {
 
   return (
     <div className="vb-theme vb-page vb-page--assist responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="VOICE ASSIST / COMMUNICATION" title={<>당신의 말을,<br /><span>더 선명하게.</span></>} description="당신의 목소리를 듣고, 이해하기 쉬운 문장과 음성으로 전달합니다." />
-
-      {/* 14. 개인정보 안내 */}
-      <section
-        aria-label="음성 합성 안내"
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-          padding: '14px 18px',
-          backgroundColor: 'var(--color-bg-subtle)',
-          borderRadius: 'var(--border-radius-md)',
-          border: '1px solid var(--color-border)',
-          marginBottom: '24px',
-        }}
-      >
-        <Info size={20} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div style={{ fontSize: 'var(--text-sm)', lineHeight: '1.5', color: 'var(--color-text-secondary)' }}>
-          음성 재생(또렷하게 들려주기)을 이용할 때 확인된 문장 텍스트가 음성 합성을 위해 <strong>네이버 클라우드 CLOVA Voice로 전송</strong>됩니다.
-        </div>
-      </section>
+      <FeaturePageHeader eyebrow="VOICE ASSIST / COMMUNICATION" title={<>당신의 말을,<br /><span>더 선명하게</span></>} description="당신의 목소리를 듣고, 이해하기 쉬운 문장과 음성으로 전달합니다." />
 
       {/* AI 대화 모드 바로가기 (기능 플래그 켜진 경우에만 노출) */}
       {isConversationModeEnabled() && (
@@ -331,12 +321,13 @@ export const VoiceAssistPage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '14px 20px',
+            padding: '16px 22px',
             backgroundColor: 'rgba(46,79,62,0.06)',
             borderRadius: 'var(--border-radius-md)',
             border: '1px solid rgba(46,79,62,0.2)',
-            marginBottom: '24px',
-            gap: '12px',
+            marginTop: 'clamp(28px, 4vw, 40px)',
+            marginBottom: 'clamp(28px, 4vw, 40px)',
+            gap: '14px',
             flexWrap: 'wrap',
           }}
         >
@@ -352,7 +343,7 @@ export const VoiceAssistPage: React.FC = () => {
             onClick={() => setCurrentTab('conversation')}
             style={{ fontWeight: 700 }}
           >
-            AI 대화 모드 시작하기
+            AI 대화 시작하기
           </SeniorButton>
         </div>
       )}
@@ -460,45 +451,38 @@ export const VoiceAssistPage: React.FC = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                  {/* API response does not contain a timestamp in this mock/stub, so we just use current time or leave it out if we want. In a real app we'd use msg.createdAt if available */}
-                  방금 전
-                </span>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 800,
-                    color: 'var(--color-secondary)',
-                    backgroundColor: 'var(--color-secondary-light)',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--color-secondary-border)',
-                  }}
-                >
-                  {msg.modelUsed === 'PERSONALIZED' ? '개인화 모델' : '기본 인식 모델'}
+                  {msg.createdAt && !Number.isNaN(new Date(msg.createdAt).getTime())
+                    ? new Date(msg.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })
+                    : '방금 전'}
                 </span>
               </div>
 
-              {/* Original Dysarthria Speech vs Corrected Output */}
+              {/* Recognized Content & Converted Output */}
               <div style={{ marginBottom: '16px' }}>
-                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-                  입력 발음 (구음장애 패턴):
-                </div>
-                <div
-                  style={{
-                    fontSize: 'var(--text-base)',
-                    color: 'var(--color-text-muted)',
-                    fontStyle: 'italic',
-                    padding: '8px 14px',
-                    backgroundColor: 'var(--color-bg-subtle)',
-                    borderRadius: '8px',
-                    marginBottom: '12px',
-                  }}
-                >
-                  "(음성 인식 기록)"
-                </div>
+                {confirmedRecognitions[msg.recognitionId]?.confirmedText &&
+                  msg.recognizedText &&
+                  msg.recognizedText.trim() !== '' &&
+                  confirmedRecognitions[msg.recognitionId].confirmedText !== msg.recognizedText && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
+                        인식된 내용
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 'var(--text-base)',
+                          color: 'var(--color-text-muted)',
+                          padding: '8px 14px',
+                          backgroundColor: 'var(--color-bg-subtle)',
+                          borderRadius: '8px',
+                        }}
+                      >
+                        {msg.recognizedText}
+                      </div>
+                    </div>
+                  )}
 
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--color-primary)', fontWeight: 800, marginBottom: '4px' }}>
-                  AI 보정 의사소통 문장:
+                  변환된 문장
                 </div>
                 {msg.recognitionId === activeRecognitionId && !confirmedRecognitions[msg.recognitionId] ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

@@ -219,17 +219,20 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
   return (
     <BrandDialog label="AI 문장 추천 및 저장" className="vb-suggestion-dialog" onClose={onClose}>
       <div
-        className="vb-drawer vb-suggestion-modal"
+        className="vb-modal-panel vb-suggestion-modal"
         style={{
           width: '100%',
           maxWidth: '620px',
-          backgroundColor: 'var(--color-bg-surface, #ffffff)',
+          backgroundColor: '#FFFFFF',
           color: 'var(--color-text, #111111)',
           borderRadius: 'var(--border-radius-lg, 16px)',
+          border: '1px solid var(--vb-line, #CBD2C8)',
+          boxShadow: '0 20px 48px rgba(12, 24, 17, 0.22)',
           padding: '28px 24px',
           boxSizing: 'border-box',
           maxHeight: '90vh',
           overflowY: 'auto',
+          margin: 'auto',
         }}
       >
         {/* 모달 상단 헤더 */}
@@ -329,12 +332,14 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: '8px',
-                border: '2px solid var(--color-border, #D1D5DB)',
+                border: '2px solid var(--color-primary-border, #A1C7A5)',
                 fontSize: 'var(--text-lg, 18px)',
                 lineHeight: 1.5,
                 boxSizing: 'border-box',
                 resize: 'none',
                 fontFamily: 'inherit',
+                backgroundColor: '#FFFFFF',
+                color: 'var(--color-text, #111111)',
               }}
             />
           </div>
@@ -357,9 +362,10 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
               style={{
                 padding: '8px 12px',
                 borderRadius: '6px',
-                border: '1px solid var(--color-border, #D1D5DB)',
+                border: '1.5px solid var(--vb-line, #CBD2C8)',
                 fontSize: 'var(--text-base, 16px)',
-                backgroundColor: 'var(--color-bg-surface, #ffffff)',
+                backgroundColor: '#FFFFFF',
+                color: 'var(--color-text, #111111)',
                 cursor: 'pointer',
               }}
             >
@@ -374,12 +380,13 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
           {/* 외부 AI 전송 안내 */}
           <div
             style={{
-              backgroundColor: '#F3F4F6',
+              backgroundColor: 'var(--vb-paper, #F6F7F2)',
+              border: '1px solid var(--vb-line, #CBD2C8)',
               padding: '12px 16px',
               borderRadius: '8px',
               marginBottom: '20px',
               fontSize: 'var(--text-xs, 13px)',
-              color: '#4B5563',
+              color: 'var(--vb-muted, #57665D)',
               lineHeight: 1.5,
               display: 'flex',
               gap: '8px',
@@ -512,10 +519,10 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
             {/* 선택 문장 수정 및 저장 설정 */}
             <div
               style={{
-                backgroundColor: 'var(--color-bg-subtle, #F9FAFB)',
+                backgroundColor: 'var(--vb-paper, #F6F7F2)',
                 padding: '18px',
                 borderRadius: '12px',
-                border: '1px solid var(--color-border, #E5E7EB)',
+                border: '1px solid var(--vb-line, #CBD2C8)',
                 marginBottom: '20px',
               }}
             >
@@ -546,10 +553,12 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
                     width: '100%',
                     padding: '12px 14px',
                     borderRadius: '8px',
-                    border: '2px solid var(--color-border, #D1D5DB)',
+                    border: '2px solid var(--color-primary-border, #A1C7A5)',
                     fontSize: 'var(--text-lg, 18px)',
                     fontWeight: 600,
                     boxSizing: 'border-box',
+                    backgroundColor: '#FFFFFF',
+                    color: 'var(--color-text, #111111)',
                   }}
                 />
                 <div
@@ -587,10 +596,11 @@ export const PhraseSuggestionModal: React.FC<PhraseSuggestionModalProps> = ({
                   style={{
                     padding: '8px 14px',
                     borderRadius: '6px',
-                    border: '1px solid var(--color-border, #D1D5DB)',
+                    border: '1.5px solid var(--vb-line, #CBD2C8)',
                     fontSize: 'var(--text-base, 16px)',
                     fontWeight: 600,
-                    backgroundColor: '#ffffff',
+                    backgroundColor: '#FFFFFF',
+                    color: 'var(--color-text, #111111)',
                     cursor: 'pointer',
                   }}
                 >

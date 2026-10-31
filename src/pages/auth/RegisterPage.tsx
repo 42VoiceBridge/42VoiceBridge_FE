@@ -127,7 +127,7 @@ export const RegisterPage: React.FC = () => {
           <p className="vb-eyebrow" style={{ color: 'var(--vb-green)', marginBottom: '24px' }}>VOICEBRIDGE / REGISTER</p>
           <div className="vb-display" style={{ fontSize: 'calc(clamp(56px, 8vw, 112px) * var(--vb-display-scale))', marginBottom: '40px' }}>
             <span>YOUR VOICE,</span>
-            <span>YOUR WAY<span className="vb-title-dot">.</span></span>
+            <span>YOUR WAY</span>
           </div>
           <p style={{ fontSize: 'var(--text-lg)', color: 'var(--vb-muted)', lineHeight: '1.7', maxWidth: '440px' }}>
             목소리가 달라도 소통은 계속될 수 있도록<br />
