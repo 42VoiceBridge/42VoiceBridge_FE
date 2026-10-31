@@ -139,8 +139,21 @@ p {
   animation: pulseGlow 1.8s infinite;
 }
 
+.animate-spin {
+  animation: spinSlow 0.9s linear infinite;
+  transform-origin: center;
+  flex-shrink: 0;
+}
+
 .animate-spin-slow {
   animation: spinSlow 1.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin,
+  .animate-spin-slow {
+    animation: none !important;
+  }
 }
 
 /* Accessibility Floating Controls */
