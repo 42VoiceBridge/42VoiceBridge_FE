@@ -84,37 +84,54 @@ export const LoginPage: React.FC = () => {
 
 
   return (
-    <div className="vb-theme vb-page" style={{ minHeight: 'calc(100vh - 96px)', display: 'flex', alignItems: 'center' }}>
-      <div className="vb-editorial-grid" style={{ width: '100%', paddingBlock: '8vh 12vh' }}>
+    <div className="vb-theme vb-page" style={{ minHeight: 'calc(100vh - 96px)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+      <div className="vb-editorial-grid" style={{ width: '100%', paddingBlock: 'clamp(20px, 4vh, 48px)', alignItems: 'stretch' }}>
         {/* Left Branding Column */}
-        <div className="vb-auth-visual" style={{ paddingBottom: '40px' }}>
-          <p className="vb-eyebrow" style={{ color: 'var(--vb-green)', marginBottom: '24px' }}>VOICEBRIDGE / LOGIN</p>
-          <div className="vb-display" style={{ fontSize: 'calc(clamp(56px, 8vw, 112px) * var(--vb-display-scale))', marginBottom: '40px' }}>
+        <div
+          className="vb-auth-visual"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            alignSelf: 'stretch',
+            gap: 'clamp(28px, 4vh, 48px)',
+            paddingBlock: '2px',
+          }}
+        >
+          <div
+            className="vb-display"
+            style={{
+              fontSize: 'calc(clamp(36px, 4.6vw, 64px) * var(--vb-display-scale))',
+              lineHeight: 1.22,
+              letterSpacing: '-0.055em',
+              margin: 0,
+            }}
+          >
             <span>EVERY VOICE</span>
             <span>DESERVES TO</span>
-            <span>BE HEARD<span className="vb-title-dot">.</span></span>
+            <span>BE HEARD</span>
           </div>
 
-          <div className="vb-slider-art" aria-hidden="true" style={{ marginTop: 'clamp(40px, 8vw, 80px)' }}>
-            <svg className="vb-graphic" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0 60 Q 100 0, 200 60 T 400 60" stroke="var(--vb-line)" strokeWidth="2" fill="none" />
-              <path d="M0 60 Q 100 120, 200 60 T 400 60" stroke="var(--vb-green)" strokeWidth="3" fill="none" />
-              <circle cx="200" cy="60" r="8" fill="var(--vb-green)" />
-              <circle cx="100" cy="30" r="4" fill="var(--vb-line)" />
-              <circle cx="300" cy="90" r="4" fill="var(--vb-line)" />
+          <div className="vb-slider-art" aria-hidden="true" style={{ marginTop: '0', maxWidth: '340px', width: '100%' }}>
+            <svg className="vb-graphic" viewBox="0 0 400 90" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ maxHeight: '76px', width: '100%' }}>
+              <path d="M0 45 Q 100 0, 200 45 T 400 45" stroke="var(--vb-line)" strokeWidth="2" fill="none" />
+              <path d="M0 45 Q 100 90, 200 45 T 400 45" stroke="var(--vb-green)" strokeWidth="3" fill="none" />
+              <circle cx="200" cy="45" r="7" fill="var(--vb-green)" />
+              <circle cx="100" cy="22" r="4" fill="var(--vb-line)" />
+              <circle cx="300" cy="68" r="4" fill="var(--vb-line)" />
             </svg>
           </div>
         </div>
 
         {/* Right Form Column */}
-        <div className="vb-auth-form" style={{ maxWidth: '440px', margin: '0 auto', width: '100%' }}>
-          <h1 style={{ fontSize: 'var(--text-3xl)', fontWeight: 500, marginBottom: '32px', letterSpacing: '-0.05em' }}>
-            만나서 반가워요.
+        <div className="vb-auth-form" style={{ maxWidth: '420px', margin: '0 auto', width: '100%' }}>
+          <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 600, marginBottom: '20px', letterSpacing: '-0.04em' }}>
+            만나서 반가워요
           </h1>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div>
-              <label htmlFor="login-email" className="vb-eyebrow" style={{ display: 'block', marginBottom: '8px', color: 'var(--vb-muted)' }}>
+              <label htmlFor="login-email" className="vb-eyebrow" style={{ display: 'block', marginBottom: '6px', color: 'var(--vb-muted)' }}>
                 EMAIL
               </label>
               <input
@@ -134,8 +151,8 @@ export const LoginPage: React.FC = () => {
                   background: 'transparent',
                   border: 'none',
                   borderBottom: `1px solid ${fieldErrors.email ? '#d84c3e' : 'var(--vb-line)'}`,
-                  padding: '8px 0 16px',
-                  fontSize: 'var(--text-lg)',
+                  padding: '6px 0 10px',
+                  fontSize: 'var(--text-base)',
                   color: 'var(--vb-ink)',
                   outline: 'none',
                   transition: 'border-color 0.2s ease',
@@ -145,14 +162,14 @@ export const LoginPage: React.FC = () => {
                 onBlur={(e) => e.target.style.borderBottomColor = fieldErrors.email ? '#d84c3e' : 'var(--vb-line)'}
               />
               {fieldErrors.email && (
-                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '4px', fontWeight: 500 }}>
                   {fieldErrors.email}
                 </p>
               )}
             </div>
 
             <div>
-              <label htmlFor="login-password" className="vb-eyebrow" style={{ display: 'block', marginBottom: '8px', color: 'var(--vb-muted)' }}>
+              <label htmlFor="login-password" className="vb-eyebrow" style={{ display: 'block', marginBottom: '6px', color: 'var(--vb-muted)' }}>
                 PASSWORD
               </label>
               <div style={{ position: 'relative' }}>
@@ -173,8 +190,8 @@ export const LoginPage: React.FC = () => {
                     background: 'transparent',
                     border: 'none',
                     borderBottom: `1px solid ${fieldErrors.password ? '#d84c3e' : 'var(--vb-line)'}`,
-                    padding: '8px 48px 16px 0',
-                    fontSize: 'var(--text-lg)',
+                    padding: '6px 44px 10px 0',
+                    fontSize: 'var(--text-base)',
                     color: 'var(--vb-ink)',
                     outline: 'none',
                     transition: 'border-color 0.2s ease',
@@ -195,15 +212,15 @@ export const LoginPage: React.FC = () => {
                     background: 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    padding: '8px',
+                    padding: '6px',
                   }}
                   aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                 >
-                  {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
               {fieldErrors.password && (
-                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '6px', fontWeight: 500 }}>
+                <p role="alert" style={{ fontSize: 'var(--text-xs)', color: '#d84c3e', marginTop: '4px', fontWeight: 500 }}>
                   {fieldErrors.password}
                 </p>
               )}
@@ -219,8 +236,8 @@ export const LoginPage: React.FC = () => {
                   color: 'var(--vb-green)',
                   fontSize: 'var(--text-sm)',
                   fontWeight: 500,
-                  marginTop: '-12px',
-                  padding: '12px 16px',
+                  marginTop: '-8px',
+                  padding: '10px 14px',
                   borderRadius: '8px',
                   lineHeight: '1.5'
                 }}
@@ -230,7 +247,7 @@ export const LoginPage: React.FC = () => {
             )}
 
             {errorMsg && (
-              <div style={{ marginTop: '-12px' }}>
+              <div style={{ marginTop: '-8px' }}>
                 <ErrorMessage
                   message={errorMsg}
                   autoDismiss={true}
@@ -240,9 +257,9 @@ export const LoginPage: React.FC = () => {
               </div>
             )}
 
-            <button className="vb-button" type="submit" disabled={isLoading} style={{ marginTop: '8px', width: '100%', justifyContent: 'center' }}>
+            <button className="vb-button" type="submit" disabled={isLoading} style={{ marginTop: '4px', minHeight: '48px', padding: '12px 20px', width: '100%', justifyContent: 'center' }}>
               {isLoading ? '로그인 중...' : '로그인'}
-              {!isLoading && <ArrowRight size={20} />}
+              {!isLoading && <ArrowRight size={18} />}
             </button>
 
             <button
@@ -250,17 +267,17 @@ export const LoginPage: React.FC = () => {
               onClick={handleKakaoLogin}
               disabled={isLoading}
               style={{
-                marginTop: '12px',
+                marginTop: '8px',
                 width: '100%',
                 justifyContent: 'center',
                 backgroundColor: '#FEE500',
                 color: 'rgba(0,0,0,0.85)',
                 border: 'none',
-                height: '56px',
+                height: '48px',
                 borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
-                fontSize: 'var(--text-lg)',
+                fontSize: 'var(--text-base)',
                 fontWeight: 600,
                 cursor: isLoading ? 'not-allowed' : 'pointer',
                 opacity: isLoading ? 0.7 : 1,
@@ -275,8 +292,8 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          <div style={{ marginTop: '56px', paddingTop: '36px', borderTop: '1px solid var(--vb-line)', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: 'var(--text-base)' }}>
+          <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid var(--vb-line)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: 'var(--text-sm)' }}>
               <span className="vb-muted">처음이신가요?</span>
               <button
                 type="button"
@@ -284,11 +301,9 @@ export const LoginPage: React.FC = () => {
                 onClick={() => setCurrentTab('register')}
                 style={{ minHeight: 'auto', padding: 0 }}
               >
-                회원가입<ArrowRight size={18} />
+                회원가입<ArrowRight size={16} />
               </button>
             </div>
-
-
           </div>
         </div>
       </div>

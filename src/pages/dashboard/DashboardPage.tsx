@@ -9,9 +9,10 @@ import { Reveal } from '../../components/home/Reveal';
 import { getRecognitionsApi } from '../../api/recognition';
 import type { RecognitionResponse } from '../../api/recognition';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
+import { isConversationModeEnabled } from '../../utils/featureFlags';
 
 export const DashboardPage = () => {
-  const { user, setCurrentTab } = useApp();
+  const { user, setCurrentTab, voiceDataVersion } = useApp();
   const [recentRecognitions, setRecentRecognitions] = useState<RecognitionResponse[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [bigViewText, setBigViewText] = useState<string | null>(null);
@@ -39,7 +40,7 @@ export const DashboardPage = () => {
       }
     };
     fetchRecent();
-  }, [user]);
+  }, [user, voiceDataVersion]);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -66,14 +67,14 @@ export const DashboardPage = () => {
         <div className="vb-hero-topline"><p className="vb-eyebrow">A BRIDGE FOR EVERY VOICE</p><span>01 / CONNECTION</span></div>
         <div className="vb-hero-layout">
           <div className="vb-hero-copy">
-            <h1 id="vb-hero-title" className="vb-display" aria-label="Voice Bridge"><span>VOICE</span><span>BRIDGE<span className="vb-title-dot" aria-hidden="true">.</span></span></h1>
-            <p className="vb-hero-statement">말이 조금 달라도,<br />소통은 자연스럽게 이어지도록.</p>
-            <p className="vb-hero-description">구음장애 사용자의 발화를 AI가 이해하고<br className="vb-desktop-break" /> 더 명확한 문장과 음성으로 전달합니다.</p>
+            <h1 id="vb-hero-title" className="vb-display" aria-label="Voice Bridge"><span>VOICE</span><span>BRIDGE</span></h1>
+            <p className="vb-hero-statement">말이 조금 달라도,<br />소통은 자연스럽게 이어지도록</p>
+            <p className="vb-hero-description">사용자의 음성과 말을 AI가 이해하고<br className="vb-desktop-break" /> 더 명확한 문장과 음성으로 전달합니다.</p>
             <button className="vb-button" onClick={() => setCurrentTab('assist')}><Mic size={21} strokeWidth={1.7} /><span>말해서 전달하기</span><ArrowUpRight size={24} /></button>
           </div>
           <HeroSlider />
         </div>
-        <div className="vb-hero-bottom"><span>당신의 목소리, 그 안에 담긴 이야기.</span><a href="#vb-intro" className="vb-text-link">서비스 알아보기<ArrowDown size={18} /></a></div>
+        <div className="vb-hero-bottom"><span>당신의 목소리, 그 안에 담긴 이야기</span><a href="#vb-intro" className="vb-text-link">서비스 알아보기<ArrowDown size={18} /></a></div>
       </section>
 
       <section id="vb-intro" className="vb-intro" aria-labelledby="vb-intro-title">
@@ -82,7 +83,7 @@ export const DashboardPage = () => {
             <p className="vb-eyebrow">02 / BEYOND THE WORDS</p>
             <h2 id="vb-intro-title">말을 이해하고,<br />마음을 잇습니다.</h2>
             <p>중요한 건 완벽한 발음보다,<br />전하고 싶은 당신의 이야기니까요.</p>
-            <p className="vb-muted">VoiceBridge는 발화에 담긴 뜻을 이해하고<br className="vb-desktop-break" /> 읽기 쉬운 문장과 또렷한 음성으로 연결합니다.<br className="vb-desktop-break" /> 일상의 대화가 조금 더 편안해지도록.</p>
+            <p className="vb-muted">VoiceBridge는 말 속에 담긴 뜻을 이해하고<br className="vb-desktop-break" /> 읽기 쉬운 문장과 또렷한 음성으로 연결합니다.<br className="vb-desktop-break" /> 일상의 대화가 조금 더 편안해지도록</p>
             <a className="vb-text-link" href="#vb-process">어떻게 전달되나요?<ArrowDown size={20} /></a>
           </div>
           <div className="vb-intro-visual"><VoiceGraphic variant="conversation" /><div className="vb-visual-caption"><span>YOUR VOICE</span><span className="vb-caption-line" /><span>OUR CONNECTION</span></div></div>
@@ -91,12 +92,12 @@ export const DashboardPage = () => {
 
       <section className="vb-process" id="vb-process" aria-labelledby="vb-process-title">
         <Reveal className="vb-container">
-          <div className="vb-section-heading"><p className="vb-eyebrow">03 / HOW IT WORKS</p><span>목소리에서, 소통으로.</span></div>
-          <h2 id="vb-process-title">말하고. 이해하고.<br /><span>또렷하게 전합니다.</span></h2>
+          <div className="vb-section-heading"><p className="vb-eyebrow">03 / HOW IT WORKS</p><span>목소리에서, 소통으로</span></div>
+          <h2 id="vb-process-title">말하고, 이해하고,<br /><span>또렷하게 전합니다</span></h2>
           <ol className="vb-process-flow">
-            <li><div className="vb-process-label"><span>01</span><ArrowRight size={28} /></div><h3>SPEAK</h3><p>편하게 말해주세요.</p><span>익숙한 속도와 목소리 그대로.</span></li>
-            <li><div className="vb-process-label"><span>02</span><ArrowRight size={28} /></div><h3>UNDERSTAND</h3><p>뜻을 담은 문장으로.</p><span>AI가 발화를 이해합니다.</span></li>
-            <li><div className="vb-process-label"><span>03</span><Volume2 size={28} strokeWidth={1.5} /></div><h3>DELIVER</h3><p>확인하고, 전달하세요.</p><span>전할 문장을 확인한 뒤 음성으로.</span></li>
+            <li><div className="vb-process-label"><span>01</span><ArrowRight size={28} /></div><h3>SPEAK</h3><p>편하게 말해주세요.</p><span>익숙한 속도와 목소리 그대로</span></li>
+            <li><div className="vb-process-label"><span>02</span><ArrowRight size={28} /></div><h3>UNDERSTAND</h3><p>뜻을 담은 문장으로</p><span>AI가 말한 내용을 이해합니다.</span></li>
+            <li><div className="vb-process-label"><span>03</span><Volume2 size={28} strokeWidth={1.5} /></div><h3>DELIVER</h3><p>확인하고, 전달하세요.</p><span>전할 문장을 확인한 뒤 음성으로</span></li>
           </ol>
           <button className="vb-button vb-button--light" onClick={() => setCurrentTab('assist')}><span>말해서 전달하기</span><ArrowUpRight size={24} /></button>
         </Reveal>
@@ -104,12 +105,21 @@ export const DashboardPage = () => {
 
       <section className="vb-personal vb-container" aria-labelledby="vb-personal-title">
         <Reveal>
-          <p className="vb-eyebrow">04 / QUICK PHRASES &amp; VOICE</p>
+          <p className="vb-eyebrow">04 / QUICK PHRASES &amp; AI CONVERSATION</p>
           <div className="vb-personal-grid">
-            <div><h2 id="vb-personal-title" className="vb-personal-title">READY WORDS,<br /><span>CLEAR VOICE.</span></h2><div className="vb-personal-lines" aria-hidden="true">{Array.from({ length: 7 }, (_,i) => <span key={i} />)}</div></div>
-            <div className="vb-section-copy"><h3>자주 쓰는 말을,<br />버튼 하나로 또렷하게.</h3><p className="vb-muted">인사, 부탁, 일상, 병원 등<br />상황별 문구를 미리 저장해 두고<br />버튼 한 번으로 또렷한 음성으로 전달합니다.</p>
-              <button className="vb-feature-link" onClick={() => setCurrentTab('phrases')}><span><small>QUICK PHRASES</small>자주 쓰는 문구 말하기</span><ArrowUpRight size={26} /></button>
-              <button className="vb-feature-link" onClick={() => setCurrentTab('assist')}><span><small>VOICE ASSIST</small>실시간 음성 대화</span><ArrowUpRight size={26} /></button>
+            <div><h2 id="vb-personal-title" className="vb-personal-title">READY WORDS,<br /><span>CLEAR VOICE</span></h2><div className="vb-personal-lines" aria-hidden="true">{Array.from({ length: 7 }, (_,i) => <span key={i} />)}</div></div>
+            <div className="vb-section-copy">
+              <h3>상황에 맞춰,<br />더 자연스럽고 또렷하게</h3>
+              <p className="vb-muted">
+                자주 하는 말은 버튼 하나로 즉시 전하고,<br className="vb-desktop-break" />
+                상대방의 말은 AI가 듣고 알맞은 답변을 추천합니다.<br className="vb-desktop-break" />
+                일상의 모든 순간, 편안하게 소통을 이어가세요.
+              </p>
+              <button className="vb-feature-link" onClick={() => setCurrentTab('phrases')}><span><small>QUICK PHRASES</small>자주 쓰는 문구</span><ArrowUpRight size={26} /></button>
+              <button className="vb-feature-link" onClick={() => setCurrentTab('assist')}><span><small>VOICE ASSIST</small>실시간 말하기</span><ArrowUpRight size={26} /></button>
+              {isConversationModeEnabled() && (
+                <button className="vb-feature-link" onClick={() => setCurrentTab('conversation')}><span><small>AI CONVERSATION</small>AI 대화</span><ArrowUpRight size={26} /></button>
+              )}
             </div>
           </div>
         </Reveal>
@@ -135,8 +145,6 @@ export const DashboardPage = () => {
         </details>
         <button className="vb-text-link" onClick={() => setCurrentTab('history')}>전체 기록 보기<ArrowUpRight size={20} /></button>
       </section>}
-
-      <div className="vb-home-signoff vb-container"><span>VOICEBRIDGE</span><p>Every voice deserves<br />to be heard.</p></div>
 
       {bigViewText && <BrandDialog label="대화 문장 크게 보기" className="vb-reading-dialog" onClose={() => setBigViewText(null)}>
         <div className="vb-reading-panel">

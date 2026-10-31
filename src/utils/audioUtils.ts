@@ -42,8 +42,10 @@ let currentRevokeUrl: string | null = null;
 
 export const stopAudioPlayback = () => {
   if (currentAudioInstance) {
+    currentAudioInstance.onended = null;
+    currentAudioInstance.onerror = null;
     currentAudioInstance.pause();
-    currentAudioInstance.src = '';
+    currentAudioInstance.removeAttribute('src');
     currentAudioInstance = null;
   }
   if (currentRevokeUrl) {
@@ -72,6 +74,8 @@ export const playAudioFromUrl = async (
     currentAudioInstance = audio;
     return new Promise<void>((resolve, reject) => {
       const done = () => {
+        audio.onended = null;
+        audio.onerror = null;
         if (currentAudioInstance === audio) {
           currentAudioInstance = null;
         }
@@ -81,6 +85,7 @@ export const playAudioFromUrl = async (
         resolve();
       };
       audio.onerror = () => {
+        console.error('audio error', audio.error);
         done();
         reject(new Error('오디오 재생 중 오류가 발생했습니다.'));
       };
@@ -111,6 +116,8 @@ export const playAudioFromUrl = async (
     currentAudioInstance = audio;
 
     const cleanup = () => {
+      audio.onended = null;
+      audio.onerror = null;
       if (currentRevokeUrl === blobUrl) {
         URL.revokeObjectURL(blobUrl);
         currentRevokeUrl = null;
@@ -126,6 +133,7 @@ export const playAudioFromUrl = async (
     };
 
     audio.onerror = () => {
+      console.error('audio error', audio.error);
       cleanup();
       reject(new Error('오디오 재생 중 오류가 발생했습니다.'));
     };

@@ -40,9 +40,13 @@
 .vb-wordmark > i { font-size: .55em; align-self: flex-start; margin: 10px 0 0 3px; font-style: normal; }
 .vb-skip-link { position: absolute; left: 12px; top: 8px; z-index: 2; padding: 12px 20px; background: var(--vb-green); color: var(--vb-on-green); transform: translateY(-160%); }
 .vb-skip-link:focus { transform: none; }
-.vb-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; border: 0; margin: 0; padding: 0; background: transparent; overflow: hidden; }
-.vb-dialog::backdrop { background: rgb(12 24 17 / .46); backdrop-filter: blur(4px); }
-.vb-drawer { width: min(580px, 100%); height: 100%; margin-left: auto; padding: 24px 40px 40px; background: var(--vb-paper); overflow-y: auto; overscroll-behavior: contain; animation: vb-drawer-in .35s var(--vb-ease); }
+.vb-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; border: 0; margin: 0; padding: 0; background: transparent; overflow: hidden; --color-bg-surface: #ffffff; animation: vb-backdrop-in 0.3s ease-out; }
+.vb-dialog::backdrop { background: rgb(12 24 17 / .52); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); animation: vb-backdrop-in 0.3s ease-out; }
+.vb-dialog.is-closing { animation: vb-backdrop-out 0.28s ease-in forwards; }
+.vb-dialog.is-closing::backdrop { animation: vb-backdrop-out 0.28s ease-in forwards; }
+.vb-drawer { width: min(580px, 100%); height: 100%; margin-left: auto; padding: 24px 40px 40px; background: var(--vb-paper); overflow-y: auto; overscroll-behavior: contain; animation: vb-drawer-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; will-change: transform; }
+.vb-dialog.is-closing .vb-drawer,
+.vb-drawer.is-closing { animation: vb-drawer-out 0.28s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 .vb-drawer-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
 .vb-drawer nav { border-top: 1px solid var(--vb-line); }
 .vb-drawer nav button { display: grid; grid-template-columns: 28px 1fr auto 24px; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 16px 0; border-bottom: 1px solid var(--vb-line); font-size: var(--text-xl); min-height: 64px; }
@@ -150,9 +154,26 @@
 .vb-reading-text { font-size: calc(var(--text-3xl) * 1.25); line-height: 1.65; text-align: center; margin-block: auto; }
 .vb-reveal-ready { opacity: 0; transform: translateY(20px); transition: opacity .8s var(--vb-ease), transform .8s var(--vb-ease); }
 .vb-reveal-ready.is-visible, .vb-reveal-ready:focus-within { opacity: 1; transform: none; }
-@keyframes vb-drawer-in { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes vb-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes vb-drawer-out { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes vb-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vb-backdrop-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes vb-breathe { 0%,100% { opacity: .7; transform: scaleY(.92); } 50% { opacity: 1; transform: scaleY(1.03); } }
 @keyframes vb-page-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .vb-drawer,
+  .vb-dialog.is-closing .vb-drawer,
+  .vb-drawer.is-closing,
+  .vb-dialog,
+  .vb-dialog::backdrop,
+  .vb-dialog.is-closing,
+  .vb-dialog.is-closing::backdrop {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
 
 @media (max-width: 1024px) {
   .vb-hero-layout { gap: 4%; }
@@ -331,12 +352,12 @@
 .vb-settings-section input[type='checkbox']:checked::before { background: var(--vb-on-green); transform: translateX(24px); }
 
 /* Account, legal and footer */
-.vb-profile-section { padding: 24px 0 34px; border-top: 1px solid var(--vb-line); border-bottom: 1px solid var(--vb-line); }
+.vb-profile-section { padding: 20px 0 22px; border-top: 1px solid var(--vb-line); border-bottom: none; }
 .vb-profile-section dl > div { display: grid; grid-template-columns: 100px minmax(0,1fr); gap: 20px; padding-top: 24px; }
 .vb-profile-section dt { color: var(--vb-muted); font-size: var(--text-xs); }
 .vb-profile-section dd { font-size: var(--text-lg); overflow-wrap: anywhere; }
-.vb-account-section { padding: 34px 0; border-bottom: 1px solid var(--vb-line); }
-.vb-account-section > p { margin-bottom: 14px; }
+.vb-account-section { padding: 4px 0 24px; border-bottom: none; }
+.vb-account-section > p { margin-bottom: 10px; }
 .vb-account-section button { display: flex; justify-content: space-between; gap: 20px; width: 100%; min-height: 58px; padding: 12px 0; border-bottom: 1px solid var(--vb-line); text-align: left; }
 .vb-account-section button:disabled { cursor: not-allowed; color: var(--vb-muted); }
 .vb-account-section small { font-size: var(--text-xs); }
@@ -350,6 +371,28 @@
 .vb-footer-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 24px; padding-top: 24px; border-top: 1px solid var(--vb-line); color: var(--vb-muted); font-size: var(--text-xs); }
 .vb-legal-dialog { display: grid; place-items: center; overflow-y: auto; padding: 20px; }
 .vb-auth-prompt-dialog { display: grid; place-items: center; overflow-y: auto; padding: 20px; }
+.vb-dialog-add-phrase,
+.vb-suggestion-dialog {
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: clamp(16px, 3vw, 32px);
+  --color-bg-surface: #ffffff;
+}
+.vb-modal-panel {
+  width: 100%;
+  animation: vb-modal-pop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes vb-modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
 .vb-auth-prompt-panel .senior-btn:focus:not(:focus-visible) { outline: none; }
 .vb-auth-prompt-panel .senior-btn:focus-visible { outline: 3px solid var(--vb-green); outline-offset: 3px; }
 .vb-legal-panel { width: min(620px,100%); max-height: calc(100dvh - 40px); overflow-y: auto; padding: clamp(28px,5vw,56px); background: var(--vb-paper); border: 1px solid var(--vb-line); }
@@ -383,3 +426,383 @@
   .vb-profile-section dl > div { grid-template-columns: 1fr; gap: 4px; }
   .vb-footer-inner { padding-block: 36px; }
 }
+
+/* ==========================================================================
+   1. Quick Phrases: Category Tab Buttons & Contrast
+   ========================================================================== */
+.vb-category-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #ffffff;
+  color: #202e27 !important;
+  border: 2px solid #cbd2c8;
+  outline: none;
+  user-select: none;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.vb-category-tab:hover {
+  background-color: #f2f6f1;
+  border-color: #28523e;
+  color: #163626 !important;
+  transform: translateY(-1px);
+}
+
+.vb-category-tab:focus-visible {
+  outline: 3px solid #28523e;
+  outline-offset: 2px;
+}
+
+.vb-category-tab.is-selected {
+  background-color: #28523e !important;
+  border-color: #28523e !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(40, 82, 62, 0.28);
+}
+
+.vb-category-tab.is-selected:hover {
+  background-color: #1e3f30 !important;
+  border-color: #1e3f30 !important;
+  color: #ffffff !important;
+}
+
+.vb-category-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  min-width: 22px;
+  background-color: #e4ece3;
+  color: #1a3c2c;
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.vb-category-tab.is-selected .vb-category-badge {
+  background-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+/* High-contrast mode support for category tabs */
+body.high-contrast .vb-category-tab {
+  background-color: #ffffff !important;
+  border: 3px solid #000000 !important;
+  color: #000000 !important;
+}
+
+body.high-contrast .vb-category-tab.is-selected {
+  background-color: #000000 !important;
+  border: 3px solid #000000 !important;
+  color: #ffff00 !important;
+}
+
+body.high-contrast .vb-category-tab.is-selected .vb-category-badge {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+}
+
+/* ==========================================================================
+   2. Global Disabled Button Styling
+   ========================================================================== */
+button:disabled,
+.vb-button:disabled,
+.senior-btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  filter: grayscale(40%) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   3. MY PAGE Support & Withdrawal Subviews
+   ========================================================================== */
+.vb-subview-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--vb-line);
+}
+
+.vb-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  margin-left: -10px;
+  border-radius: 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--vb-green);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.vb-back-btn:hover {
+  background-color: var(--vb-tint);
+}
+
+.vb-notice-card {
+  background: #ffffff;
+  border: 1px solid var(--vb-line);
+  border-radius: 8px;
+  padding: 20px 22px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.vb-notice-card:hover {
+  border-color: var(--vb-green);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.vb-faq-item {
+  border-bottom: 1px solid var(--vb-line);
+}
+
+.vb-faq-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 4px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--vb-ink);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.vb-faq-header:hover {
+  color: var(--vb-green);
+}
+
+.vb-faq-body {
+  padding: 0 4px 18px;
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  color: #3b4841;
+  word-break: keep-all;
+}
+
+/* ==========================================================================
+   4. AI Conversation: KakaoTalk-like Chat Interface
+   ========================================================================== */
+.vb-chat-view {
+  max-width: 860px;
+  margin: 0 auto 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.vb-chat-stream {
+  background: var(--vb-paper);
+  border: 1px solid var(--vb-line);
+  border-radius: 12px;
+  min-height: 420px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+
+.vb-chat-row {
+  display: flex;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.vb-chat-row--counterpart {
+  justify-content: flex-start;
+}
+
+.vb-chat-row--me {
+  justify-content: flex-end;
+}
+
+.vb-chat-bubble {
+  max-width: 80%;
+  min-width: 120px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  animation: vb-message-appear 0.22s ease-out;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+@keyframes vb-message-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vb-chat-bubble--counterpart {
+  background-color: #edf3ec;
+  border: 1px solid #d4dfd2;
+  color: #1e2b24;
+  border-bottom-left-radius: 4px;
+}
+
+.vb-chat-bubble--me {
+  background-color: #28523e;
+  border: 1px solid #28523e;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 2px 6px rgba(40, 82, 62, 0.22);
+}
+
+.vb-chat-sender-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vb-chat-bubble--counterpart .vb-chat-sender-label {
+  color: #4b6656;
+}
+
+.vb-chat-bubble--me .vb-chat-sender-label {
+  color: rgba(255, 255, 255, 0.82);
+  justify-content: flex-end;
+}
+
+.vb-chat-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+}
+
+.vb-chat-text {
+  font-size: var(--text-base);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.vb-candidate-deck {
+  background: #ffffff;
+  border: 2px solid #28523e;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(40, 82, 62, 0.1);
+  animation: vb-message-appear 0.25s ease-out;
+}
+
+.vb-candidate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 14px 18px;
+  background-color: #f7faf6;
+  border: 1.5px solid #cbdacb;
+  border-radius: 8px;
+  text-align: left;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: #1e3629;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.vb-candidate-btn:hover {
+  background-color: #eaf3ea;
+  border-color: #28523e;
+  transform: translateX(2px);
+  color: #132b1f;
+}
+
+.vb-candidate-btn:focus-visible {
+  outline: 3px solid #28523e;
+  outline-offset: 2px;
+}
+
+.vb-chat-dock {
+  background: var(--vb-paper);
+  border: 1px solid var(--vb-line);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.vb-chat-actions {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .vb-chat-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Phrases Page: Category bar & balanced dividers */
+.vb-phrases-category-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: clamp(28px, 4vw, 44px);
+  padding-bottom: clamp(24px, 3.5vw, 32px);
+  border-bottom: 1px solid var(--vb-line);
+  margin-bottom: clamp(28px, 4vw, 40px);
+}
+
+.vb-phrases-category-bar + .vb-empty-state {
+  border-top: none !important;
+  margin-top: 0 !important;
+}
+

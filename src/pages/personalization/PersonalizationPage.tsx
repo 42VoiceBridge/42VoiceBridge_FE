@@ -50,7 +50,7 @@ export const PersonalizationPage: React.FC = () => {
 
   return (
     <div className="vb-theme vb-page vb-page--personalization responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="PERSONALIZATION / YOUR AI" title={<>YOUR VOICE,<br /><span>YOUR AI.</span></>} description={`${user?.name || '사용자'}님의 개인화 모델 상태를 확인할 수 있습니다. 새 음성 수집과 학습 기능은 준비 중입니다.`} />
+      <FeaturePageHeader eyebrow="PERSONALIZATION / YOUR AI" title={<>YOUR VOICE,<br /><span>YOUR AI</span></>} description={`${user?.name || '사용자'}님의 개인화 모델 상태를 확인할 수 있습니다. 새 음성 수집과 학습 기능은 준비 중입니다.`} />
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           데이터를 불러오는 중입니다...

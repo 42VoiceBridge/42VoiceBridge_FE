@@ -97,7 +97,7 @@ export const PracticePage: React.FC = () => {
 
   return (
     <div className="vb-theme vb-page vb-page--practice responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="PRACTICE / SPEECH CARE" title={<>문장을 천천히,<br /><span>나의 목소리로.</span></>} description="추천 문장을 듣고 따라 읽어보세요. 녹음 평가와 결과 저장은 준비 중입니다." />
+      <FeaturePageHeader eyebrow="PRACTICE / SPEECH CARE" title={<>문장을 천천히,<br /><span>나의 목소리로</span></>} description="추천 문장을 듣고 따라 읽어보세요. 녹음 평가와 결과 저장은 준비 중입니다." />
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 style={{ fontSize: 'var(--text-xl)', margin: 0, fontWeight: 800 }}>추천 연습 문장</h2>

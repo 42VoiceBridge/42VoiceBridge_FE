@@ -14,7 +14,7 @@ import { FeaturePageHeader } from '../../components/layout/FeaturePageHeader';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 
 export const HistoryPage: React.FC = () => {
-  const { user, setCurrentTab, requireAuth } = useApp();
+  const { user, setCurrentTab, requireAuth, voiceDataVersion } = useApp();
   
   const [recognitions, setRecognitions] = useState<RecognitionResponse[]>([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -28,12 +28,19 @@ export const HistoryPage: React.FC = () => {
     const fetchHistory = async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) {
+        setRecognitions([]);
+        setTotalElements(0);
+        setDetailData({});
+        setExpandedId(null);
         setError('로그인이 필요합니다.');
         setLoading(false);
         return;
       }
       try {
+        setLoading(true);
         setError(null);
+        setDetailData({});
+        setExpandedId(null);
         const res = await getRecognitionsApi(token, 0, 20);
         if (res.success && res.data) {
           setRecognitions(res.data.content);
@@ -49,7 +56,7 @@ export const HistoryPage: React.FC = () => {
       }
     };
     fetchHistory();
-  }, []);
+  }, [voiceDataVersion, user]);
 
   const toggleExpand = async (id: string) => {
     if (expandedId === id) {
@@ -77,7 +84,7 @@ export const HistoryPage: React.FC = () => {
 
   return (
     <div className="vb-theme vb-page vb-page--history responsive-page" style={{ maxWidth: '1040px', margin: '30px auto', padding: '0 16px 60px' }}>
-      <FeaturePageHeader eyebrow="HISTORY / YOUR RECORDS" title={<>나의 대화와,<br /><span>목소리의 기록.</span></>} description="실제 음성 인식 결과와 인식 신뢰도의 흐름을 확인합니다." meta={`TOTAL ${totalElements}`} />
+      <FeaturePageHeader eyebrow="HISTORY / YOUR RECORDS" title={<>나의 대화와,<br /><span>목소리의 기록</span></>} description="실제 음성 인식 결과와 인식 신뢰도의 흐름을 확인합니다." meta={`TOTAL ${totalElements}`} />
       {/* User Summary Profile Card */}
       <div className="responsive-panel vb-history-summary"
         style={{

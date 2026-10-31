@@ -382,7 +382,7 @@ export const DiagnosisPage: React.FC = () => {
   if (step === 'intro') {
     return (
       <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '800px', margin: '30px auto', padding: '0 16px' }}>
-        <FeaturePageHeader eyebrow="PRONUNCIATION / SPEECH CARE" title={<>내 발음을,<br /><span>조금 더 이해하기 쉽게.</span></>} description="짧은 문장을 읽으면 발음 상태와 개선점을 확인할 수 있습니다." />
+        <FeaturePageHeader eyebrow="PRONUNCIATION / SPEECH CARE" title={<>내 발음을,<br /><span>조금 더 이해하기 쉽게</span></>} description="짧은 문장을 읽으면 발음 상태와 개선점을 확인할 수 있습니다." />
         <div className="responsive-panel vb-function-stage vb-diagnosis-intro"
           style={{
             backgroundColor: 'var(--color-bg-surface)',
@@ -488,7 +488,7 @@ export const DiagnosisPage: React.FC = () => {
 
     return (
       <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '840px', margin: '30px auto', padding: '0 16px' }}>
-        <FeaturePageHeader eyebrow="PRONUNCIATION / RECORDING" title={<>현재 문장을,<br /><span>편안하게 읽어주세요.</span></>} description="평소 속도로 천천히 읽고, 문장을 마치면 녹음을 완료해주세요." meta={`${String(currentIndex + 1).padStart(2, '0')} / ${String(sentences.length || 1).padStart(2, '0')}`} />
+        <FeaturePageHeader eyebrow="PRONUNCIATION / RECORDING" title={<>현재 문장을,<br /><span>편안하게 읽어주세요</span></>} description="평소 속도로 천천히 읽고, 문장을 마치면 녹음을 완료해주세요." meta={`${String(currentIndex + 1).padStart(2, '0')} / ${String(sentences.length || 1).padStart(2, '0')}`} />
         
         <div
           style={{
@@ -644,7 +644,7 @@ export const DiagnosisPage: React.FC = () => {
   if (step === 'analyzing') {
     return (
       <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '600px', margin: '60px auto', textAlign: 'center', padding: '0 16px' }}>
-        <FeaturePageHeader eyebrow="PRONUNCIATION / ANALYSIS" title={<>AI가 발음을,<br /><span>분석하고 있어요.</span></>} description="발음 상태를 확인하는 동안 잠시만 기다려주세요." />
+        <FeaturePageHeader eyebrow="PRONUNCIATION / ANALYSIS" title={<>AI가 발음을,<br /><span>분석하고 있어요</span></>} description="발음 상태를 확인하는 동안 잠시만 기다려주세요." />
         <div className="responsive-panel vb-function-stage vb-analysis-stage"
           style={{
             backgroundColor: 'var(--color-bg-surface)',
@@ -686,7 +686,7 @@ export const DiagnosisPage: React.FC = () => {
   if (step === 'result') {
     return (
       <div className="vb-theme vb-page vb-page--diagnosis responsive-page" style={{ maxWidth: '960px', margin: '30px auto', padding: '0 16px 60px' }}>
-        <FeaturePageHeader eyebrow="PRONUNCIATION / REPORT" title={<>오늘의 발음,<br /><span>이렇게 들렸습니다.</span></>} description="문장별 발화를 바탕으로 발음의 차이를 확인해보세요." />
+        <FeaturePageHeader eyebrow="PRONUNCIATION / REPORT" title={<>오늘의 발음,<br /><span>이렇게 들렸습니다</span></>} description="문장별 말하기를 바탕으로 발음의 차이를 확인해보세요." />
         
         <div className="responsive-panel vb-diagnosis-report"
           style={{

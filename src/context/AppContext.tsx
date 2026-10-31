@@ -51,6 +51,9 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<void>;
   loginWithKakao: () => Promise<void>;
   logout: () => void;
+  completeWithdrawal: () => void;
+  voiceDataVersion: number;
+  notifyVoiceDataCleared: () => void;
 
   // Senior Accessibility Settings
   fontSize: FontSizeLevel;
@@ -70,11 +73,39 @@ interface AppContextType {
 
 import { loginApi, getMeApi, kakaoLoginApi } from '../api/auth';
 
+const resolveUserProvider = (
+  apiProvider?: 'LOCAL' | 'KAKAO',
+  fallbackLoginProvider?: 'kakao' | 'email' | null,
+  email?: string | null
+): { provider: 'LOCAL' | 'KAKAO'; loginProvider: 'kakao' | 'email' } => {
+  if (apiProvider === 'KAKAO') {
+    return { provider: 'KAKAO', loginProvider: 'kakao' };
+  }
+  if (apiProvider === 'LOCAL') {
+    return { provider: 'LOCAL', loginProvider: 'email' };
+  }
+  if (fallbackLoginProvider === 'kakao') {
+    return { provider: 'KAKAO', loginProvider: 'kakao' };
+  }
+  if (fallbackLoginProvider === 'email') {
+    return { provider: 'LOCAL', loginProvider: 'email' };
+  }
+  const isKakaoFallback = !email || email.includes('kakao');
+  return isKakaoFallback
+    ? { provider: 'KAKAO', loginProvider: 'kakao' }
+    : { provider: 'LOCAL', loginProvider: 'email' };
+};
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [voiceDataVersion, setVoiceDataVersion] = useState<number>(0);
+
+  const notifyVoiceDataCleared = useCallback(() => {
+    setVoiceDataVersion((v) => v + 1);
+    window.dispatchEvent(new Event('voicebridge:voice-data-cleared'));
+  }, []);
   const [currentTab, setCurrentTabState] = useState<NavTab>(() => {
     if (window.location.pathname === '/auth/kakao/callback') {
       return 'login';
@@ -207,11 +238,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 } else {
                   localStorage.removeItem('userEmail');
                 }
+                const { provider, loginProvider } = resolveUserProvider(
+                  profileRes.data.provider,
+                  'kakao',
+                  profileRes.data.email
+                );
+                localStorage.setItem('loginProvider', loginProvider);
                 setUser({
                   id: profileRes.data.userId,
                   name: profileRes.data.nickname,
                   email: profileRes.data.email ?? '',
                   createdAt: new Date().toISOString().split('T')[0],
+                  loginProvider,
+                  provider,
                 });
                 const target = resolveRedirectTab();
                 setCurrentTab(target);
@@ -242,11 +281,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       getMeApi(token)
           .then(res => {
             if (res.success && res.data) {
+              const savedProvider = localStorage.getItem('loginProvider') as 'kakao' | 'email' | null;
+              const { provider, loginProvider } = resolveUserProvider(
+                res.data.provider,
+                savedProvider,
+                res.data.email
+              );
+              localStorage.setItem('loginProvider', loginProvider);
               setUser({
                 id: res.data.userId,
                 name: res.data.nickname,
                 email: res.data.email ?? '',
                 createdAt: new Date().toISOString().split('T')[0],
+                loginProvider,
+                provider,
               });
               if (currentTab === 'login' || currentTab === 'register') {
                 const target = resolveRedirectTab();
@@ -259,6 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('userEmail');
+          localStorage.removeItem('loginProvider');
           sessionStorage.removeItem('redirectTab');
           setUser(null);
           if (currentTab === 'login' || currentTab === 'register') {
@@ -275,14 +324,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem('accessToken', res.data.accessToken);
         localStorage.setItem('refreshToken', res.data.refreshToken);
         localStorage.setItem('userEmail', email);
+        localStorage.setItem('loginProvider', 'email');
         
         const profileRes = await getMeApi(res.data.accessToken);
         if (profileRes.success && profileRes.data) {
+          const { provider, loginProvider } = resolveUserProvider(
+            profileRes.data.provider,
+            'email',
+            profileRes.data.email
+          );
+          localStorage.setItem('loginProvider', loginProvider);
           setUser({
             id: profileRes.data.userId,
             name: profileRes.data.nickname,
             email: profileRes.data.email ?? '',
             createdAt: new Date().toISOString().split('T')[0],
+            loginProvider,
+            provider,
           });
           const target = resolveRedirectTab();
           setCurrentTab(target);
@@ -309,17 +367,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const logout = useCallback(() => {
+  const clearUserSession = useCallback((targetTab: NavTab = 'dashboard') => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('loginProvider');
     sessionStorage.removeItem('currentTab');
     sessionStorage.removeItem('redirectTab');
     setIsAuthModalOpen(false);
     setPendingAuthTarget(null);
     setUser(null);
-    setCurrentTab('dashboard');
-  }, [setCurrentTab]);
+    notifyVoiceDataCleared();
+    setCurrentTab(targetTab);
+  }, [setCurrentTab, notifyVoiceDataCleared]);
+
+  const logout = useCallback(() => {
+    clearUserSession('dashboard');
+  }, [clearUserSession]);
+
+  const completeWithdrawal = useCallback(() => {
+    clearUserSession('login');
+  }, [clearUserSession]);
 
   useEffect(() => {
     window.addEventListener('auth:logout', logout);
@@ -343,6 +411,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         loginWithKakao,
         logout,
+        completeWithdrawal,
+        voiceDataVersion,
+        notifyVoiceDataCleared,
         fontSize,
         setFontSize,
         highContrast,

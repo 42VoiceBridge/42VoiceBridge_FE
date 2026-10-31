@@ -5,7 +5,6 @@ import {
   Plus,
   Trash2,
   AlertCircle,
-  Info,
   Loader2,
   X,
   MessageSquare,
@@ -24,16 +23,23 @@ import {
   deletePhraseApi,
   speakPhraseApi,
   PhraseApiError,
+  CATEGORY_LABELS,
   type PhraseCategoryGroup,
   type PhraseItem
 } from '../../api/phrases';
 import { playAudioFromUrl, stopAudioPlayback } from '../../utils/audioUtils';
 
+const DEFAULT_CATEGORIES: PhraseCategoryGroup[] = Object.keys(CATEGORY_LABELS).map((code) => ({
+  category: code,
+  label: CATEGORY_LABELS[code],
+  phrases: [],
+}));
+
 export const PhrasesPage: React.FC = () => {
   const { user, requireAuth } = useApp();
 
-  const [categories, setCategories] = useState<PhraseCategoryGroup[]>([]);
-  const [selectedCategoryCode, setSelectedCategoryCode] = useState<string>('');
+  const [categories, setCategories] = useState<PhraseCategoryGroup[]>(DEFAULT_CATEGORIES);
+  const [selectedCategoryCode, setSelectedCategoryCode] = useState<string>('HOSPITAL');
   const [loading, setLoading] = useState<boolean>(true);
   const [pageError, setPageError] = useState<string | null>(null);
 
@@ -264,35 +270,11 @@ export const PhrasesPage: React.FC = () => {
         title={
           <>
             자주 쓰는 말을,<br />
-            <span>버튼 하나로 또렷하게.</span>
+            <span>버튼 하나로 또렷하게</span>
           </>
         }
         description="일상에서 자주 사용하는 문구를 카테고리별로 선택해 즉시 또렷한 음성으로 전달합니다."
       />
-
-      {/* 14. 개인정보 및 외부 전송 안내 배너 */}
-      <section
-        aria-label="안내 및 개인정보 알림"
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: '12px',
-          padding: '16px 20px',
-          backgroundColor: 'var(--color-bg-subtle)',
-          borderRadius: 'var(--border-radius-md)',
-          border: '1px solid var(--color-border)',
-          marginBottom: '24px',
-        }}
-      >
-        <Info size={22} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
-        <div style={{ fontSize: 'var(--text-sm)', lineHeight: '1.6', color: 'var(--color-text-secondary)' }}>
-          <strong style={{ color: 'var(--color-text)', display: 'block', marginBottom: '2px' }}>
-            말하기 기능 이용 안내
-          </strong>
-          말하기 버튼을 누르면 문구 텍스트가 음성 합성을 위해 <strong>네이버 클라우드 CLOVA Voice 등 외부 서비스로 안전하게 전송</strong>됩니다.
-          안전을 위해 직접 추가하는 문구에는 이름, 연락처, 주소와 같은 민감한 개인정보를 넣지 마세요.
-        </div>
-      </section>
 
       {/* 오류 메시지 영역 */}
       {(pageError || speakError) && (
@@ -310,16 +292,7 @@ export const PhrasesPage: React.FC = () => {
       )}
 
       {/* 상단 컨트롤: 카테고리 탭 (순서 그대로 유지) & 문구 추가 버튼 */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          flexWrap: 'wrap',
-          marginBottom: '24px',
-        }}
-      >
+      <div className="vb-phrases-category-bar">
         {/* 4. categories 배열 순서 그대로 표시, 이름은 label로 표시 */}
         <nav
           aria-label="문구 카테고리"
@@ -339,30 +312,12 @@ export const PhrasesPage: React.FC = () => {
                   setSelectedCategoryCode(cat.category);
                   setSpeakError(null);
                 }}
-                className={`vb-button ${isSelected ? '' : 'vb-button--ghost'}`}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '8px',
-                  fontSize: 'var(--text-base)',
-                  fontWeight: isSelected ? 700 : 500,
-                  border: isSelected ? '2px solid var(--color-primary)' : '2px solid var(--color-border)',
-                  backgroundColor: isSelected ? 'var(--color-primary)' : 'var(--color-bg-surface)',
-                  color: isSelected ? '#ffffff' : 'var(--color-text)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
+                className={`vb-category-tab ${isSelected ? 'is-selected' : ''}`}
+                aria-selected={isSelected}
+                role="tab"
               >
                 <span>{cat.label}</span>
-                <span
-                  style={{
-                    fontSize: 'var(--text-xs)',
-                    padding: '2px 8px',
-                    borderRadius: '6px',
-                    backgroundColor: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--color-bg-subtle)',
-                    color: isSelected ? '#ffffff' : 'var(--color-text-muted)',
-                    marginLeft: '4px',
-                  }}
-                >
+                <span className="vb-category-badge">
                   {cat.phrases.length}
                 </span>
               </button>
@@ -503,11 +458,11 @@ export const PhrasesPage: React.FC = () => {
                       style={{
                         fontSize: 'var(--text-xs)',
                         fontWeight: 700,
-                        padding: '3px 8px',
+                        padding: '4px 10px',
                         borderRadius: '6px',
-                        backgroundColor: phrase.custom ? '#EBF5FF' : 'var(--color-bg-subtle)',
-                        color: phrase.custom ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                        border: phrase.custom ? '1px solid #C3D9FF' : '1px solid var(--color-border)',
+                        backgroundColor: phrase.custom ? '#e8f0ea' : '#f0f3ef',
+                        color: phrase.custom ? '#1a3c2c' : '#2b3b32',
+                        border: phrase.custom ? '1px solid #c2d8cb' : '1px solid #d5ded7',
                       }}
                     >
                       {phrase.custom ? '내가 추가한 문구' : '기본 문구'}
@@ -591,12 +546,18 @@ export const PhrasesPage: React.FC = () => {
           onClose={() => !isSubmitting && setIsAddModalOpen(false)}
         >
           <div
+            className="vb-modal-panel"
             style={{
-              padding: '28px',
-              backgroundColor: 'var(--color-bg-surface)',
-              borderRadius: 'var(--border-radius-lg)',
+              padding: '32px 28px',
+              backgroundColor: '#FFFFFF',
+              color: 'var(--color-text, #111111)',
+              borderRadius: 'var(--border-radius-lg, 16px)',
+              border: '1px solid var(--vb-line, #CBD2C8)',
+              boxShadow: '0 20px 48px rgba(12, 24, 17, 0.22)',
               maxWidth: '520px',
               width: '100%',
+              margin: 'auto',
+              boxSizing: 'border-box',
             }}
           >
             <div
@@ -625,10 +586,10 @@ export const PhrasesPage: React.FC = () => {
             {/* 8. 문구 추가 화면 필수 안내 사항 */}
             <div
               style={{
-                backgroundColor: 'var(--color-bg-subtle)',
+                backgroundColor: 'var(--vb-paper, #F6F7F2)',
                 padding: '14px 16px',
-                borderRadius: 'var(--border-radius-md)',
-                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--border-radius-md, 10px)',
+                border: '1px solid var(--vb-line, #CBD2C8)',
                 marginBottom: '20px',
               }}
             >
@@ -698,9 +659,9 @@ export const PhrasesPage: React.FC = () => {
                     padding: '12px 14px',
                     fontSize: 'var(--text-base)',
                     borderRadius: 'var(--border-radius-md)',
-                    border: '2px solid var(--color-border)',
-                    backgroundColor: 'var(--color-bg-surface)',
-                    color: 'var(--color-text)',
+                    border: '1.5px solid var(--vb-line, #CBD2C8)',
+                    backgroundColor: '#FFFFFF',
+                    color: 'var(--color-text, #111111)',
                   }}
                 >
                   {categories.map((c) => (
@@ -756,10 +717,10 @@ export const PhrasesPage: React.FC = () => {
                     padding: '14px 16px',
                     fontSize: 'var(--text-lg)',
                     borderRadius: 'var(--border-radius-md)',
-                    border: '2px solid var(--color-border)',
+                    border: '2px solid var(--color-primary-border, #A1C7A5)',
                     boxSizing: 'border-box',
-                    backgroundColor: 'var(--color-bg-surface)',
-                    color: 'var(--color-text)',
+                    backgroundColor: '#FFFFFF',
+                    color: 'var(--color-text, #111111)',
                   }}
                 />
               </div>
